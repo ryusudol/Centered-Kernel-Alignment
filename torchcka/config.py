@@ -22,7 +22,7 @@ class CKAConfig:
     kernel: Literal["linear", "rbf"] = "linear"
     sigma: Optional[float] = None
     unbiased: bool = True
-    epsilon: float = 1e-10
+    epsilon: float = 1e-6
     dtype: torch.dtype = torch.float64
     device: Optional[torch.device] = None
 
