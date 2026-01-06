@@ -18,7 +18,7 @@ from .config import CKAConfig
 from .core import compute_gram_matrix, hsic
 from .utils import (
     FeatureCache,
-    get_all_layer_names,
+    auto_select_layers,
     get_device,
     unwrap_model,
     validate_batch_size,
@@ -96,25 +96,13 @@ class CKA:
 
         # Validate and store layers
         if layers1 is None:
-            all_layers = get_all_layer_names(self.model1)
-            layers1 = all_layers[:50] if len(all_layers) > 50 else all_layers
-            if len(all_layers) > 50:
-                warnings.warn(
-                    f"Model1 has {len(all_layers)} layers. Auto-selected first 50. "
-                    "Consider specifying layers1 explicitly for better control."
-                )
+            layers1, _ = auto_select_layers(self.model1, max_layers=50, model_name="Model1")
 
         if layers2 is None:
             if self._same_model:
                 layers2 = layers1
             else:
-                all_layers = get_all_layer_names(self.model2)
-                layers2 = all_layers[:50] if len(all_layers) > 50 else all_layers
-                if len(all_layers) > 50:
-                    warnings.warn(
-                        f"Model2 has {len(all_layers)} layers. Auto-selected first 50. "
-                        "Consider specifying layers2 explicitly for better control."
-                    )
+                layers2, _ = auto_select_layers(self.model2, max_layers=50, model_name="Model2")
 
         # Validate layers exist
         valid1, invalid1 = validate_layers(self.model1, layers1)
@@ -384,6 +372,33 @@ class CKA:
         else:
             raise TypeError(f"Unsupported batch type: {type(batch)}")
 
+    def _prepare_gram_and_self_hsic(
+        self,
+        feat: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Prepare gram matrix and compute self-HSIC for a feature tensor.
+
+        Handles flattening, dtype conversion, gram computation, and HSIC(K,K).
+
+        Args:
+            feat: Feature tensor from a layer, shape (B, ...).
+
+        Returns:
+            Tuple of (gram_matrix, self_hsic_value).
+        """
+        if feat.dim() > 2:
+            feat = feat.flatten(1)
+
+        feat = feat.to(dtype=self.config.dtype)
+
+        gram = compute_gram_matrix(
+            feat, self.config.kernel, self.config.sigma, self.config.epsilon
+        )
+
+        hsic_self = hsic(gram, gram, self.config.unbiased, self.config.epsilon)
+
+        return gram, hsic_self
+
     def _accumulate_hsic(
         self,
         hsic_xy: torch.Tensor,
@@ -407,16 +422,8 @@ class CKA:
             if feat1 is None:
                 continue
 
-            if feat1.dim() > 2:
-                feat1 = feat1.flatten(1)
-            feat1 = feat1.to(dtype=self.config.dtype)
-
-            gram1 = compute_gram_matrix(
-                feat1, self.config.kernel, self.config.sigma, self.config.epsilon
-            )
+            gram1, hsic_kk = self._prepare_gram_and_self_hsic(feat1)
             gram1_cache[layer1] = gram1
-
-            hsic_kk = hsic(gram1, gram1, self.config.unbiased, self.config.epsilon)
             hsic_xx[i] += hsic_kk
 
         # Cache gram matrices and HSIC(L, L) for model2
@@ -425,16 +432,8 @@ class CKA:
             if feat2 is None:
                 continue
 
-            if feat2.dim() > 2:
-                feat2 = feat2.flatten(1)
-            feat2 = feat2.to(dtype=self.config.dtype)
-
-            gram2 = compute_gram_matrix(
-                feat2, self.config.kernel, self.config.sigma, self.config.epsilon
-            )
+            gram2, hsic_ll = self._prepare_gram_and_self_hsic(feat2)
             gram2_cache[layer2] = gram2
-
-            hsic_ll = hsic(gram2, gram2, self.config.unbiased, self.config.epsilon)
             hsic_yy[j] += hsic_ll
 
         # Compute cross-HSIC for all layer pairs
