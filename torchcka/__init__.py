@@ -16,7 +16,7 @@ References:
     - Nguyen et al., 2020: "Do Wide and Deep Networks Learn the Same Things?"
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 from .cka import CKA, ModelInfo
 from .config import CKAConfig
