@@ -1,4 +1,4 @@
-"""Shared test fixtures for torchcka tests."""
+"""Shared test fixtures for pytorch_cka tests."""
 
 import pytest
 

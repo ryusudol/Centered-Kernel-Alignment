@@ -1,10 +1,10 @@
-"""torchcka: Centered Kernel Alignment for PyTorch.
+"""pytorch-cka: Centered Kernel Alignment for PyTorch models.
 
 A numerically stable, memory-safe library for comparing neural network
 representations using Centered Kernel Alignment (CKA).
 
 Example:
-    >>> from torchcka import CKA, CKAConfig
+    >>> from pytorch_cka import CKA, CKAConfig
     >>>
     >>> config = CKAConfig(kernel="linear", unbiased=True)
     >>> with CKA(model1, model2, layers1=["layer1", "layer2"], config=config) as cka:
@@ -16,7 +16,7 @@ References:
     - Nguyen et al., 2020: "Do Wide and Deep Networks Learn the Same Things?"
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 from .cka import CKA, ModelInfo
 from .config import CKAConfig

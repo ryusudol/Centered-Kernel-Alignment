@@ -3,8 +3,8 @@
 import pytest
 import torch
 
-from torchcka.config import CKAConfig
-from torchcka.core import (
+from pytorch_cka.config import CKAConfig
+from pytorch_cka.core import (
     center_gram_matrix,
     cka,
     cka_from_gram,

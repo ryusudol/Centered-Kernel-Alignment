@@ -1,1 +1,1 @@
-"""Test suite for torchcka."""
+"""Test suite for pytorch_cka."""

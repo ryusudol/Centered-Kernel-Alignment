@@ -8,7 +8,7 @@ import torch
 matplotlib.use("Agg")  # Non-interactive backend for tests
 import matplotlib.pyplot as plt
 
-from torchcka.viz import plot_cka_comparison, plot_cka_heatmap, plot_cka_trend, save_figure
+from pytorch_cka.viz import plot_cka_comparison, plot_cka_heatmap, plot_cka_trend, save_figure
 
 
 class TestPlotCKAHeatmap:

@@ -3,7 +3,7 @@
 import pytest
 import torch
 
-from torchcka.config import CKAConfig
+from pytorch_cka.config import CKAConfig
 
 
 class TestCKAConfigValidation:

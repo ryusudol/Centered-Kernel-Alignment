@@ -26,7 +26,7 @@ try:
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
 
-from torchcka import CKA, CKAConfig
+from pytorch_cka import CKA, CKAConfig
 
 from .helpers import get_sample_layers
 

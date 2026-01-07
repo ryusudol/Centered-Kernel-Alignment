@@ -4,7 +4,7 @@ import pytest
 import torch
 import torch.nn as nn
 
-from torchcka.utils import (
+from pytorch_cka.utils import (
     FeatureCache,
     eval_mode,
     get_all_layer_names,

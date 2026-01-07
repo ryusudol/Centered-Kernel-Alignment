@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
-from torchcka import CKA, CKAConfig
+from pytorch_cka import CKA, CKAConfig
 
 from .helpers import get_sample_layers, get_layers_by_type
 

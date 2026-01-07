@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from torchcka import CKA, CKAConfig
+from pytorch_cka import CKA, CKAConfig
 
 
 class SimpleModel(nn.Module):
@@ -43,7 +43,7 @@ class TestCKAClass:
     def test_context_manager_hook_cleanup(self, model, dataloader):
         """Hooks should be properly cleaned up after context exit."""
         layers = ["layer1", "layer2"]
-        
+
         hook_count_before = sum(len(m._forward_hooks) for m in model.modules())
 
         with CKA(model, layers1=layers) as cka_analyzer:

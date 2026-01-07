@@ -1,4 +1,4 @@
-"""Shared test helper functions for torchcka tests."""
+"""Shared test helper functions for pytorch_cka tests."""
 
 import torch
 import torch.nn as nn
