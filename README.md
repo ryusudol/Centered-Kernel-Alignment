@@ -1,10 +1,10 @@
 <div align="center">
-
-# CKA for PyTorch models
+    
+# 🚀 PyTorch-CKA
 
 **Centered Kernel Alignment (CKA) for PyTorch**
 
-Numerically stable, memory-safe comparison of neural network representations.
+Fast, memory-efficient, and numerically stable Centered Kernel Alignment (CKA) for layer-wise similarity analysis.
 
 [![PyPI](https://img.shields.io/pypi/v/pytorch_cka?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/pytorch_cka/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -13,11 +13,19 @@ Numerically stable, memory-safe comparison of neural network representations.
 
 </div>
 
----
 
-## About
+## ✨ Why PyTorch-CKA?
 
-**Centered Kernel Alignment (CKA)** is a similarity metric for comparing representations learned by neural networks, based on the Hilbert-Schmidt Independence Criterion (HSIC). It answers the question: _"How similar are the features learned by two layers (or models)?"_
+- **Fast** — optimized HSIC core + same-model single-pass optimization
+- **Memory-efficient** — minibatch CKA without full-dataset loading
+- **Safe & automatic** — context manager handles hooks and cleanup
+- **Publication-ready plots** — heatmaps, trends, and comparison grids
+- **Production-ready** — HuggingFace, DataParallel/DDP, auto layer selection
+
+
+## ✍🏼 About CKA
+
+**CKA** is a similarity metric for comparing representations learned by neural networks, based on the Hilbert-Schmidt Independence Criterion (HSIC). It answers the question: _"How similar are the features learned by two layers (or models)?"_
 
 Given two matrices $X \in \mathbb{R}^{n \times p_1}$ and $Y \in \mathbb{R}^{n \times p_2}$ representing layer activations for $n$ samples, CKA computes:
 
@@ -25,18 +33,8 @@ $$\text{CKA}(K, L) = \frac{\text{HSIC}(K, L)}{\sqrt{\text{HSIC}(K, K) \cdot \tex
 
 where $K = XX^T$ and $L = YY^T$ are Gram matrices, and HSIC measures statistical dependence between them.
 
-### Why pytorch-cka?
 
-- **Memory-efficient**: Uses minibatch CKA—accumulates HSIC values instead of storing all activations
-- **Safe hooks**: Context manager ensures forward hooks are always cleaned up
-- **Same-model optimization**: Single forward pass when comparing a model with itself
-- **DataParallel/DDP support**: Automatic model unwrapping
-- **Auto layer selection**: Automatically finds suitable layers to compare
-- **Publication-ready plots**: Heatmaps, trend plots, and comparison grids
-
----
-
-## Installation
+## 📦 Installation
 
 Requires Python >= 3.10.
 
@@ -53,84 +51,54 @@ cd pytorch-cka
 uv sync  # or: pip install -e .
 ```
 
----
 
-## Quick Start
+## 👟 Quick Start
 
 ### Basic Usage
 
 ```python
-from pytorch_cka import CKA, CKAConfig, plot_cka_heatmap
+from torch.utils.data import DataLoader
+from pytorch_cka import CKA
 
-# Define layers to compare
+pretrained_model = ...  # e.g. pretrained ResNet-18
+fine_tuned_model = ...  # e.g. fine-tuned ResNet-18
+
 layers = ["layer1", "layer2", "layer3", "fc"]
 
-# Configure CKA (optional)
-config = CKAConfig(kernel="linear", unbiased=True)
+dataloader = DataLoader(..., batch_size=128)
 
-# Compute CKA using context manager (ensures hook cleanup)
-with CKA(model, layers1=layers, config=config) as cka:
-    matrix = cka.compare(dataloader)
-
-# Visualize
-fig, ax = plot_cka_heatmap(matrix, layers1=layers, layers2=layers)
-fig.savefig("cka_heatmap.png")
-```
-
-### Comparing Two Models
-
-```python
-with CKA(
-    model1, model2,
-    layers1=["conv1", "conv2", "fc"],
-    layers2=["conv1", "conv2", "fc"],
-    model1_name="ResNet18",
-    model2_name="ResNet34",
-) as cka:
-    matrix = cka.compare(dataloader)
-```
-
-### Callable API (Simpler)
-
-```python
-# No context manager needed—hooks managed automatically
-cka = CKA(model, layers1=layers)
-matrix = cka(dataloader)
-```
-
-### Auto Layer Selection
-
-```python
-# Automatically selects up to 50 layers if none specified
-with CKA(model) as cka:
-    matrix = cka.compare(dataloader)
-    print(f"Compared layers: {cka.layers1}")
-```
-
----
-
-## Configuration
-
-```python
-from pytorch_cka import CKAConfig
-
-config = CKAConfig(
-    kernel="linear",    # "linear" or "rbf"
-    sigma=None,         # RBF bandwidth (None = median heuristic)
-    unbiased=True,      # Unbiased HSIC estimator (requires batch_size > 3)
-    epsilon=1e-6,       # Numerical stability constant
-    dtype=torch.float64,# Computation precision
-    device=None,        # Auto-detected from model
+cka = CKA(
+    model1=pretrained_model,
+    model2=fine_tuned_model,
+    model1_name="ResNet-18 (pretrained)",
+    model2_name="ResNet-18 (fine-tuned)",
+    model1_layers=layers,
+    model2_layers=layers,
+    device="cuda"
 )
+
+# Most convenient usage (auto context manager)
+cka_matrix = cka(dataloader)
+cka_result = cka.export(cka_matrix)
+
+# Or explicit control
+with cka:
+    cka_matrix = cka.compare(dataloader)
+    cka_result = cka.export(cka_matrix)
 ```
 
-> **Note**: Unbiased HSIC (default) requires batch size > 3. For smaller batches, set `unbiased=False`.
+### Real-time Monitoring
 
----
+```python
+def progress_callback(batch_idx: int, total: int, current_matrix: torch.Tensor):
+    print(f"Batch {batch_idx}/{total} | Mean CKA: {current_matrix.mean():.4f}")
 
-## Visualization
+cka.compare(dataloader, callback=progress_callback)
+```
 
-### Heatmap
+### Visualization
+
+**Heatmap**
 
 ```python
 from pytorch_cka import plot_cka_heatmap
@@ -147,7 +115,13 @@ fig, ax = plot_cka_heatmap(
 )
 ```
 
-### Trend Plot
+![Self-comparison heatmap](plots/heatmap_self.png)
+
+![Cross-model comparison heatmap](plots/heatmap_cross.png)
+
+![Masked upper triangle heatmap](plots/heatmap_masked.png)
+
+**Trend Plot**
 
 ```python
 from pytorch_cka import plot_cka_trend
@@ -162,7 +136,11 @@ fig, ax = plot_cka_trend(
 )
 ```
 
-### Side-by-Side Comparison
+![Single trend plot](plots/trend_single.png)
+
+![Multiple trends comparison](plots/trend_multi.png)
+
+**Side-by-Side Comparison**
 
 ```python
 from pytorch_cka import plot_cka_comparison
@@ -175,37 +153,10 @@ fig, axes = plot_cka_comparison(
 )
 ```
 
----
+![CKA comparison grid](plots/comparison_grid.png)
 
-## API Reference
 
-### Core Functions
-
-| Function                 | Description                            |
-| ------------------------ | -------------------------------------- |
-| `hsic(K, L, ...)`        | Compute HSIC between two Gram matrices |
-| `compute_gram_matrix(X)` | Compute Gram matrix using linear kernel|
-
-### Utilities
-
-| Function                         | Description                    |
-| -------------------------------- | ------------------------------ |
-| `validate_layers(model, layers)` | Check which layers exist       |
-| `unwrap_model(model)`            | Unwrap DataParallel/DDP models |
-| `get_device(model)`              | Detect model device            |
-
-### Visualization
-
-| Function                   | Description                    |
-| -------------------------- | ------------------------------ |
-| `plot_cka_heatmap(...)`    | CKA similarity heatmap         |
-| `plot_cka_trend(...)`      | Line plot for CKA trends       |
-| `plot_cka_comparison(...)` | Side-by-side matrix comparison |
-| `save_figure(fig, path)`   | Save with sensible defaults    |
-
----
-
-## References
+## 📚 References
 
 1. Kornblith, Simon, et al. ["Similarity of Neural Network Representations Revisited."](https://arxiv.org/abs/1905.00414) _ICML 2019._
 
@@ -213,14 +164,12 @@ fig, axes = plot_cka_comparison(
 
 3. Wang, Tinghua, Xiaolu Dai, and Yuze Liu. ["Learning with Hilbert-Schmidt Independence Criterion: A Review."](https://www.sciencedirect.com/science/article/pii/S0950705121008297) _Knowledge-Based Systems 2021._
 
+
 ### Related Projects
 
-- [google-research/representation_similarity](https://github.com/google-research/google-research/tree/master/representation_similarity) — Original implementation
-- [AntixK/PyTorch-Model-Compare](https://github.com/AntixK/PyTorch-Model-Compare) — PyTorch CKA with hooks
-- [numpee/CKA.pytorch](https://github.com/numpee/CKA.pytorch) — Minibatch CKA implementation
+- [AntixK/PyTorch-Model-Compare](https://github.com/AntixK/PyTorch-Model-Compare)
+- [RistoAle97/centered-kernel-alignment](https://github.com/RistoAle97/centered-kernel-alignment)
 
----
+## 📝 License
 
-## License
-
-[MIT](LICENSE)
+[MIT License](LICENSE)
