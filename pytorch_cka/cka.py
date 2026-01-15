@@ -101,7 +101,6 @@ class CKA:
     # =========================================================================
 
     def __enter__(self) -> "CKA":
-        """Enter context: register hooks and set eval mode."""
         self._register_hooks()
         self._save_training_state()
         self.model1.eval()
@@ -114,7 +113,6 @@ class CKA:
         exc_val: BaseException | None,
         exc_tb: Any | None,
     ) -> bool:
-        """Exit context: remove hooks, restore training state, and clear features."""
         self._remove_hooks()
         self._restore_training_state()
         self._clear_features()
@@ -129,16 +127,6 @@ class CKA:
         cache: FeatureCache,
         layer_name: str,
     ) -> Callable[[nn.Module, Tuple[torch.Tensor, ...], torch.Tensor], None]:
-        """Create a hook function for a specific layer.
-
-        Args:
-            cache: Feature cache to store outputs.
-            layer_name: Name of the layer being hooked.
-
-        Returns:
-            Hook function.
-        """
-
         def hook(
             module: nn.Module,
             input: Tuple[torch.Tensor, ...],
@@ -159,7 +147,6 @@ class CKA:
 
 
     def _register_hooks(self) -> None:
-        """Register forward hooks on specified layers."""
         if self._hook_handles:
             return
 
@@ -234,20 +221,17 @@ class CKA:
 
 
     def _remove_hooks(self) -> None:
-        """Remove all registered hooks."""
         for handle in self._hook_handles:
             handle.remove()
         self._hook_handles.clear()
 
 
     def _save_training_state(self) -> None:
-        """Save models' training state for later restoration."""
         self._model1_training = self.model1.training
         self._model2_training = self.model2.training
 
 
     def _restore_training_state(self) -> None:
-        """Restore models' training state."""
         if self._model1_training is not None:
             self.model1.train(self._model1_training)
         if self._model2_training is not None:
@@ -334,18 +318,6 @@ class CKA:
 
 
     def _extract_input(self, batch: Any) -> torch.Tensor:
-        """Extract input tensor from batch.
-
-        Args:
-            batch: Batch from DataLoader (tensor, tuple, list, or dict).
-
-        Returns:
-            Input tensor.
-
-        Raises:
-            TypeError: If batch type is not supported.
-            ValueError: If cannot find input in dict batch.
-        """
         if isinstance(batch, torch.Tensor):
             return batch
         elif isinstance(batch, (list, tuple)):
@@ -363,16 +335,6 @@ class CKA:
         self,
         feat: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Prepare gram matrix and compute self-HSIC for a feature tensor.
-
-        Handles flattening and gram computation.
-
-        Args:
-            feat: Feature tensor from a layer, shape (B, ...).
-
-        Returns:
-            Tuple of (gram_matrix, self_hsic_value).
-        """
         if feat.dim() > 2:
             feat = feat.flatten(1)
 
@@ -388,13 +350,6 @@ class CKA:
         hsic_xx: torch.Tensor,
         hsic_yy: torch.Tensor,
     ) -> None:
-        """Accumulate HSIC values for minibatch CKA.
-
-        Args:
-            hsic_xy: Accumulator for HSIC(K, L), shape (n_layers1, n_layers2).
-            hsic_xx: Accumulator for HSIC(K, K), shape (n_layers1,).
-            hsic_yy: Accumulator for HSIC(L, L), shape (n_layers2,).
-        """
         if self._is_same_model and self.model1_layers == self.model2_layers:
             self._accumulate_hsic_symmetric(hsic_xy, hsic_xx, hsic_yy)
             return
@@ -475,17 +430,6 @@ class CKA:
         hsic_xx: torch.Tensor,
         hsic_yy: torch.Tensor,
     ) -> None:
-        """Accumulate HSIC values for symmetric case (same model + same layers).
-
-        Optimizations:
-        - hsic_xx == hsic_yy (compute once)
-        - hsic_xy is symmetric (compute upper triangle only)
-
-        Args:
-            hsic_xy: Accumulator for HSIC(K, L), shape (n_layers, n_layers).
-            hsic_xx: Accumulator for HSIC(K, K), shape (n_layers,).
-            hsic_yy: Accumulator for HSIC(L, L), shape (n_layers,).
-        """
         gram_cache: Dict[str, torch.Tensor] = {}
 
         for i, layer in enumerate(self.model1_layers):
@@ -521,16 +465,6 @@ class CKA:
         hsic_xx: torch.Tensor,
         hsic_yy: torch.Tensor,
     ) -> torch.Tensor:
-        """Compute CKA matrix from accumulated HSIC values.
-
-        Args:
-            hsic_xy: Accumulated HSIC(K, L), shape (n_layers1, n_layers2).
-            hsic_xx: Accumulated HSIC(K, K), shape (n_layers1,).
-            hsic_yy: Accumulated HSIC(L, L), shape (n_layers2,).
-
-        Returns:
-            CKA matrix of shape (n_layers1, n_layers2).
-        """
         # CKA[i,j] = HSIC_xy[i,j] / sqrt(HSIC_xx[i] * HSIC_yy[j])
         # Clamp to non-negative to handle potential negative unbiased HSIC values
         denominator = torch.sqrt(torch.clamp(hsic_xx.unsqueeze(1) * hsic_yy.unsqueeze(0), min=0.0))
