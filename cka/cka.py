@@ -34,6 +34,48 @@ class CKA:
         ...     print(matrix)
     """
 
+    @staticmethod
+    def _resolve_layers(
+        model: nn.Module,
+        layers: Sequence[str | int] | None,
+        model_name: str,
+    ) -> list[str] | None:
+        if layers is None:
+            return None
+
+        all_layer_names = [name for name, _ in model.named_modules() if name]
+        n_layers = len(all_layer_names)
+
+        result: list[str] = []
+        seen: set[str] = set()
+
+        for layer in layers:
+            if isinstance(layer, str):
+                name = layer
+            elif isinstance(layer, int):
+                if layer < 0:
+                    idx = n_layers + layer
+                else:
+                    idx = layer
+
+                if idx < 0 or idx >= n_layers:
+                    raise IndexError(
+                        f"Layer index {layer} is out of range for {model_name} "
+                        f"with {n_layers} layers (valid range: {-n_layers} to {n_layers - 1})."
+                    )
+                name = all_layer_names[idx]
+            else:
+                raise TypeError(
+                    f"Layer specification must be str or int, "
+                    f"got {type(layer).__name__} in {model_name}_layers."
+                )
+
+            if name not in seen:
+                result.append(name)
+                seen.add(name)
+
+        return result
+
     def __init__(
         self,
         model1: nn.Module,
@@ -51,18 +93,30 @@ class CKA:
             model2: Second model to compare.
             model1_name: Display name for model1.
             model2_name: Display name for model2.
-            model1_layers: Layers to hook in model1. If None, uses all layers.
-            model2_layers: Layers to hook in model2. If None, uses all layers.
+            model1_layers: Layers to hook in model1. Can be:
+                - None: Uses all layers (with warning if > 150).
+                - Sequence of strings: Layer names (e.g., ["conv1", "fc"]).
+                - Sequence of integers: Layer indices (e.g., [0, 1, -1]).
+                  Negative indices count from the end (Python-style).
+                - Mixed sequence: Combination of strings and integers.
+                Duplicates are removed, keeping only the first occurrence.
+            model2_layers: Layers to hook in model2. Same format as model1_layers.
             device: Device for computation. If None, auto-detects from model.
 
         Raises:
             ValueError: If no valid layers are found.
+            TypeError: If layer specifications contain non-string/integer values.
+            IndexError: If layer indices are out of range.
         """
         # Unwrap DataParallel/DDP
         self.model1 = unwrap_model(model1)
         self.model2 = unwrap_model(model2)
 
         self.device = torch.device(device) if device else get_device(self.model1)
+
+        # Resolve layer specifications (convert indices to names)
+        model1_layers = self._resolve_layers(self.model1, model1_layers, "model1")
+        model2_layers = self._resolve_layers(self.model2, model2_layers, "model2")
 
         if not model1_layers:
             model1_layers = [name for name, _ in self.model1.named_modules() if name]
