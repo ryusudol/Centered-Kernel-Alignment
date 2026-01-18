@@ -1,7 +1,9 @@
 <div align="center">
+
 # Centered Kernel Alignment (CKA)
 
 **Lightning-fast, Memory-efficient, and Numerically Stable CKA for PyTorch**
+
 </div>
 
 ## ✨ Key Features
