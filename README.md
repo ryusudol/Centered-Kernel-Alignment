@@ -76,11 +76,11 @@ fig, ax = plot_cka_heatmap(
     cka_matrix,
     layers1=layers,
     layers2=layers,
-    model1_name="Model A",
-    model2_name="Model B",
-    annot=True,           # Show values in cells
-    cmap="magma",         # Colormap
-    mask_upper=True,      # Mask upper triangle (symmetric matrices)
+    model1_name="ResNet-18 (pretrained)",
+    model2_name="ResNet-18 (random init)",
+    annot=False,          # Show values in cells
+    cmap="inferno",       # Colormap
+    mask_upper=False,     # Mask upper triangle (symmetric matrices)
 )
 ```
 
@@ -114,11 +114,11 @@ fig, ax = plot_cka_trend(
 
 <table>
     <tr>
-      <td><img src="examples/plots/trend_single.png" alt="Single trend plot" width="100%"/></td>
+      <td><img src="examples/plots/line_cross_model_convergence.png" alt="Cross model CKA scores trends" width="100%"/></td>
       <td><img src="examples/plots/trend_multi.png" alt="Multiple trends comparison" width="100%"/></td>
     </tr>
     <tr>
-      <td align="center">Single Trend</td>
+      <td align="center">Cross Model CKA Scores Trends</td>
       <td align="center">Multiple Trends</td>
     </tr>
 </table>
