@@ -9,6 +9,8 @@ from tqdm import tqdm
 
 from .hsic import hsic, hsic_outer
 
+EPS = 1e-6
+
 
 class CKA:
     @staticmethod
@@ -122,6 +124,11 @@ class CKA:
             self._model1_layer_to_feature.clear()
             self._model2_layer_to_feature.clear()
 
+    def _compute_gram(self, feat: torch.Tensor) -> torch.Tensor:
+        std, mean = torch.std_mean(feat, dim=0, keepdim=True)
+        feat_std = (feat - mean) / (std + EPS)
+        return torch.mm(feat_std, feat_std.T)
+
     def _extract_input(self, batch: Any) -> torch.Tensor:
         if isinstance(batch, torch.Tensor):
             return batch
@@ -146,7 +153,7 @@ class CKA:
             layer_to_idx = {}
             for idx, (layer, feat) in enumerate(self._shared_features.items()):
                 layer_to_idx[layer] = idx
-                grams.append(torch.mm(feat, feat.T))
+                grams.append(self._compute_gram(feat))
             grams = torch.stack(grams)
 
             grams1 = grams[[layer_to_idx[layer] for layer in self.model1_layer_to_module]]
@@ -164,17 +171,13 @@ class CKA:
         else:
             grams1 = torch.stack(
                 [
-                    torch.mm(
-                        self._model1_layer_to_feature[layer], self._model1_layer_to_feature[layer].T
-                    )
+                    self._compute_gram(self._model1_layer_to_feature[layer])
                     for layer in self.model1_layer_to_module
                 ]
             )
             grams2 = torch.stack(
                 [
-                    torch.mm(
-                        self._model2_layer_to_feature[layer], self._model2_layer_to_feature[layer].T
-                    )
+                    self._compute_gram(self._model2_layer_to_feature[layer])
                     for layer in self.model2_layer_to_module
                 ]
             )

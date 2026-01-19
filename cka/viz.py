@@ -4,7 +4,7 @@ This module provides publication-quality visualization functions that
 always return (Figure, Axes) tuples for further customization.
 """
 
-from typing import List, Tuple
+from typing import List, Literal, Tuple
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -245,6 +245,129 @@ def plot_cka_trend(
     if title:
         ax.set_title(title)
     if legend and n_lines > 1:
+        ax.legend()
+    if grid:
+        ax.grid(True, alpha=0.3)
+
+    ax.set_ylim(0, 1.05)  # CKA is in [0, 1]
+
+    fig.tight_layout()
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def plot_cka_trend_with_range(
+    mean_values: torch.Tensor | np.ndarray,
+    min_values: torch.Tensor | np.ndarray,
+    max_values: torch.Tensor | np.ndarray,
+    label: str | None = None,
+    x_values: List[int | float] | None = None,
+    xlabel: str = "Layer",
+    ylabel: str = "CKA Similarity",
+    title: str | None = None,
+    figsize: Tuple[float, float] = (10, 6),
+    ax: Axes | None = None,
+    color: str | None = None,
+    style: Literal["fill", "errorbar"] = "fill",
+    alpha: float = 0.3,
+    marker: str = "o",
+    linestyle: str = "-",
+    legend: bool = True,
+    grid: bool = True,
+    show: bool = False,
+) -> Tuple[Figure, Axes]:
+    """Plot CKA trend line with min-max range visualization.
+
+    Args:
+        mean_values: Mean CKA values of shape (n_points,).
+        min_values: Minimum CKA values of shape (n_points,).
+        max_values: Maximum CKA values of shape (n_points,).
+        label: Legend label for the line.
+        x_values: X-axis values. Defaults to 0, 1, 2, ...
+        xlabel: X-axis label.
+        ylabel: Y-axis label.
+        title: Plot title.
+        figsize: Figure size.
+        ax: Existing axes.
+        color: Line and fill color. If None, uses default color.
+        style: Visualization style - "fill" for shaded area, "errorbar" for error bars.
+        alpha: Transparency for fill area (only used with style="fill").
+        marker: Marker style.
+        linestyle: Line style.
+        legend: Show legend.
+        grid: Show grid.
+        show: Whether to call plt.show().
+
+    Returns:
+        Tuple of (Figure, Axes).
+    """
+    # Convert to numpy
+    def to_numpy(arr):
+        if isinstance(arr, torch.Tensor):
+            return arr.detach().cpu().numpy()
+        return np.asarray(arr)
+
+    mean_arr = to_numpy(mean_values)
+    min_arr = to_numpy(min_values)
+    max_arr = to_numpy(max_values)
+
+    # Create figure
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = ax.get_figure()
+
+    # X values
+    x = x_values if x_values is not None else list(range(len(mean_arr)))
+
+    # Default color
+    if color is None:
+        color = "#4e79a7"
+
+    if style == "fill":
+        # Plot mean line
+        ax.plot(
+            x,
+            mean_arr,
+            color=color,
+            linestyle=linestyle,
+            marker=marker,
+            label=label,
+            markersize=6,
+        )
+        # Fill between min and max
+        ax.fill_between(
+            x,
+            min_arr,
+            max_arr,
+            color=color,
+            alpha=alpha,
+        )
+    elif style == "errorbar":
+        # Compute error bounds (asymmetric errors)
+        yerr_lower = mean_arr - min_arr
+        yerr_upper = max_arr - mean_arr
+        ax.errorbar(
+            x,
+            mean_arr,
+            yerr=[yerr_lower, yerr_upper],
+            color=color,
+            linestyle=linestyle,
+            marker=marker,
+            label=label,
+            markersize=6,
+            capsize=3,
+            capthick=1,
+        )
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title)
+    if legend and label:
         ax.legend()
     if grid:
         ax.grid(True, alpha=0.3)
