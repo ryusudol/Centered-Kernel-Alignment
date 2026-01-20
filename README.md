@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <i>Computing CKA on two different ResNet-18 models.</i>
+  <i>CKA computation across all layers of two distinct ResNet-18 models on CIFAR-10</i>
 </p>
 
 
