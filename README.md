@@ -41,7 +41,7 @@ pip install pytorch-cka
 uv add pytorch-cka
 
 # Using docker
-docker pull ghcr.io/ryusudol/pytorch-cka
+docker pull ghcr.io/ryusudol/pytorch-cka:latest
 
 # From source
 git clone https://github.com/ryusudol/Centered-Kernel-Alignment
