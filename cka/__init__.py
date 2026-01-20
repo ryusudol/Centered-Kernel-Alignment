@@ -4,7 +4,7 @@ A numerically stable, memory-safe library for comparing neural network
 representations using Centered Kernel Alignment (CKA).
 
 Example:
-    >>> from pytorch_cka import CKA
+    >>> from cka import CKA
     >>>
     >>> with CKA(model1, model2, model1_layers=["layer1", "layer2"]) as cka:
     ...     matrix = cka.compare(dataloader)

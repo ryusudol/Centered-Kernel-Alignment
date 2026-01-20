@@ -11,12 +11,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from pytorch_cka import CKA, plot_cka_heatmap, plot_cka_trend
-
-
-# =============================================================================
-# Define example models
-# =============================================================================
+from cka import CKA, plot_cka_heatmap, plot_cka_trend
 
 
 class SimpleCNN(nn.Module):
