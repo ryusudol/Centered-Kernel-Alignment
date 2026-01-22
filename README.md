@@ -14,9 +14,9 @@
 
 <p align="center">
     <picture align="center">
-        <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/97387076-7749-4971-a868-a10014c4ad36">
-        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/71a99d79-c69e-4deb-a9aa-20e514f4cc80">
-        <img alt="A bar chart with benchmark results in dark mode" src="https://github.com/user-attachments/assets/71a99d79-c69e-4deb-a9aa-20e514f4cc80" width="100%" />
+        <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/e5f5c51b-4298-424c-81dd-02657af60247">
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/2e665d9d-5645-4726-996f-3a1817136eaf">
+        <img alt="A bar chart with benchmark results in dark mode" src="https://github.com/user-attachments/assets/2e665d9d-5645-4726-996f-3a1817136eaf" width="100%" />
     </picture>
 </p>
 
