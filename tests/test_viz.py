@@ -41,23 +41,6 @@ class TestPlotCkaHeatmap:
         assert fig is external_fig
         plt.close(fig)
 
-    def test_mask_upper_symmetric(self):
-        matrix = torch.rand(5, 5)
-        matrix = (matrix + matrix.T) / 2
-
-        fig, ax = plot_cka_heatmap(matrix, mask_upper=True)
-
-        assert fig is not None
-        plt.close(fig)
-
-    def test_mask_upper_non_square_ignored(self):
-        matrix = torch.rand(5, 4)
-
-        fig, ax = plot_cka_heatmap(matrix, mask_upper=True)
-
-        assert fig is not None
-        plt.close(fig)
-
     def test_annot_true(self):
         matrix = torch.rand(3, 3)
 
@@ -65,15 +48,6 @@ class TestPlotCkaHeatmap:
 
         texts = [child for child in ax.get_children() if hasattr(child, "get_text")]
         assert len(texts) > 0
-        plt.close(fig)
-
-    def test_annot_with_mask_upper(self):
-        matrix = torch.rand(4, 4)
-        matrix = (matrix + matrix.T) / 2
-
-        fig, ax = plot_cka_heatmap(matrix, annot=True, mask_upper=True)
-
-        assert fig is not None
         plt.close(fig)
 
     def test_custom_layer_names(self):

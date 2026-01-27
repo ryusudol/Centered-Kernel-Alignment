@@ -92,7 +92,6 @@ fig, ax = plot_cka_heatmap(
     model2_name="ResNet-18 (random init)",
     annot=False,          # Show values in cells
     cmap="inferno",       # Colormap
-    mask_upper=False,     # Mask upper triangle (symmetric matrices)
 )
 ```
 

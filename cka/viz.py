@@ -29,7 +29,6 @@ def plot_cka_heatmap(
     figsize: Tuple[float, float] | None = None,
     ax: Axes | None = None,
     colorbar: bool = True,
-    mask_upper: bool = False,
     tick_fontsize: int = 8,
     label_fontsize: int = 12,
     title_fontsize: int = 14,
@@ -54,7 +53,6 @@ def plot_cka_heatmap(
         figsize: Figure size (width, height).
         ax: Existing axes to plot on.
         colorbar: Show colorbar.
-        mask_upper: Mask upper triangle (for symmetric matrices).
         tick_fontsize: Font size for tick labels.
         label_fontsize: Font size for axis labels.
         title_fontsize: Font size for title.
@@ -82,11 +80,6 @@ def plot_cka_heatmap(
     else:
         fig = ax.get_figure()
 
-    # Handle masking for symmetric matrices
-    if mask_upper and n_layers1 == n_layers2:
-        mask = np.triu(np.ones_like(matrix, dtype=bool), k=1)
-        matrix = np.ma.masked_array(matrix, mask=mask)
-
     # Set colormap bounds
     if vmin is None:
         vmin = float(np.nanmin(matrix))
@@ -100,8 +93,6 @@ def plot_cka_heatmap(
     if annot:
         for i in range(n_layers1):
             for j in range(n_layers2):
-                if mask_upper and n_layers1 == n_layers2 and i < j:
-                    continue
                 val = matrix[i, j]
                 if not np.ma.is_masked(val) and not np.isnan(val):
                     text_color = "white" if val < (vmin + vmax) / 2 else "black"
