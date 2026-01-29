@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from cka import CKA, plot_cka_heatmap, plot_cka_trend
+from cka import compute_cka, plot_cka_heatmap, plot_cka_trend
 
 
 class SimpleCNN(nn.Module):
@@ -88,9 +88,14 @@ def example_self_comparison():
     # Define layers to compare
     layers = ["conv1", "conv2", "conv3", "fc"]
 
-    # Compute CKA using context manager
-    with CKA(model, model, model1_layers=layers) as cka:
-        matrix = cka.compare(dataloader, progress=False)
+    matrix = compute_cka(
+        model,
+        model,
+        dataloader,
+        model1_layers=layers,
+        model2_layers=layers,
+        progress=False,
+    )[0]
 
     print(f"\nCKA Matrix (self-comparison):\n{matrix}")
     print(f"\nDiagonal values (should be ~1.0): {torch.diag(matrix)}")
@@ -123,15 +128,16 @@ def example_two_model_comparison():
     layers1 = ["conv1", "conv2", "conv3", "fc"]
     layers2 = ["conv1", "conv2", "conv3", "fc"]
 
-    with CKA(
+    matrix = compute_cka(
         model1,
         model2,
+        dataloader,
         model1_layers=layers1,
         model2_layers=layers2,
         model1_name="SimpleCNN",
         model2_name="WiderCNN",
-    ) as cka:
-        matrix = cka.compare(dataloader, progress=False)
+        progress=False,
+    )[0]
 
     print(f"\nCKA Matrix (SimpleCNN vs WiderCNN):\n{matrix}")
 
@@ -160,8 +166,14 @@ def example_trend_plot():
 
     layers = ["conv1", "bn1", "conv2", "bn2", "conv3", "bn3", "fc"]
 
-    with CKA(model, model, model1_layers=layers) as cka:
-        matrix = cka.compare(dataloader, progress=False)
+    matrix = compute_cka(
+        model,
+        model,
+        dataloader,
+        model1_layers=layers,
+        model2_layers=layers,
+        progress=False,
+    )[0]
 
     # Extract diagonal (self-similarity scores)
     diagonal = torch.diag(matrix)
@@ -178,22 +190,30 @@ def example_trend_plot():
     print("\nSaved: cka_trend.png")
 
 
-def example_callable_api():
-    """Example: Using the callable API (simpler syntax)."""
+def example_multiple_dataloaders():
+    """Example: Compute CKA across multiple dataloaders."""
     print("\n" + "=" * 60)
-    print("Example 4: Callable API")
+    print("Example 4: Multiple Dataloaders")
     print("=" * 60)
 
     model = SimpleCNN()
-    dataloader = create_dummy_dataloader()
+    dataloader1 = create_dummy_dataloader()
+    dataloader2 = create_dummy_dataloader()
 
     layers = ["conv1", "conv2", "conv3"]
 
-    # Using callable API (no context manager needed)
-    cka = CKA(model, model, model1_layers=layers)
-    matrix = cka(dataloader, progress=False)  # Automatically handles hooks
+    matrices = compute_cka(
+        model,
+        model,
+        dataloader1,
+        dataloader2,
+        model1_layers=layers,
+        model2_layers=layers,
+        progress=False,
+    )
 
-    print(f"\nCKA Matrix (callable API):\n{matrix}")
+    print(f"\nCKA Matrix (dataloader 1):\n{matrices[0]}")
+    print(f"\nCKA Matrix (dataloader 2):\n{matrices[1]}")
 
 
 def main():
@@ -205,7 +225,7 @@ def main():
     example_self_comparison()
     example_two_model_comparison()
     example_trend_plot()
-    example_callable_api()
+    example_multiple_dataloaders()
 
     print("\n" + "=" * 60)
     print("All examples completed!")

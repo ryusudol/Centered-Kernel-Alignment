@@ -61,20 +61,20 @@ def hsic(
     return hsic_xy, hsic_xx, hsic_yy
 
 
-def hsic_outer(
+def hsic_cross(
     grams_x: torch.Tensor,
     grams_y: torch.Tensor,
 ) -> torch.Tensor:
     if grams_x.dim() != 3 or grams_y.dim() != 3:
         raise ValueError(
-            f"hsic_outer requires 3D tensors, got shapes {grams_x.shape} and {grams_y.shape}"
+            f"hsic_cross requires 3D tensors, got shapes {grams_x.shape} and {grams_y.shape}"
         )
 
     _, n, m = grams_x.shape
     _, n_y, m_y = grams_y.shape
 
     if n != m or n_y != m_y:
-        raise ValueError("hsic_outer requires square matrices")
+        raise ValueError("hsic_cross requires square matrices")
 
     if n != n_y:
         raise ValueError(
@@ -82,7 +82,7 @@ def hsic_outer(
         )
 
     if n <= 3:
-        raise ValueError(f"hsic_outer requires n > 3, got n={n}")
+        raise ValueError(f"hsic_cross requires n > 3, got n={n}")
 
     diag_x = torch.diagonal(grams_x, dim1=-2, dim2=-1)  # (n1, n)
     diag_y = torch.diagonal(grams_y, dim1=-2, dim2=-1)  # (n2, n)

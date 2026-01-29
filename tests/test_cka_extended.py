@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from cka import CKA
+from cka import compute_cka
+from cka.cka import CKA
 
 
 class SimpleModel(nn.Module):
@@ -139,7 +140,7 @@ class TestResolveLayers:
         cka = CKA(
             model1,
             model2,
-            model1_layers=["layer1", "layer1", "layer2"],
+            layers=["layer1", "layer1", "layer2"],
         )
 
         assert len(cka.model1_layer_to_module) == 2
@@ -176,18 +177,6 @@ class TestInit:
         cka = CKA(model1, model2)
 
         assert cka.device == torch.device("cuda")
-
-    def test_custom_model_names(self, model1, model2):
-        cka = CKA(model1, model2, model1_name="ResNet", model2_name="VGG")
-
-        assert cka.model1_name == "ResNet"
-        assert cka.model2_name == "VGG"
-
-    def test_default_model_names(self, model1, model2):
-        cka = CKA(model1, model2)
-
-        assert cka.model1_name == "SimpleModel"
-        assert cka.model2_name == "SimpleModel"
 
     def test_same_model_detection(self, model1):
         cka = CKA(model1, model1)
@@ -270,33 +259,43 @@ class TestExtractInput:
 
 class TestMakeHook:
     def test_tensor_output(self, model1, model2, dataloader):
-        cka = CKA(model1, model2)
-
-        result = cka(dataloader)
+        result = compute_cka(model1, model2, dataloader)[0]
 
         assert result.shape == (3, 3)
 
     def test_tuple_output(self, model2, dataloader):
         model = TupleOutputModel()
-        cka = CKA(model, model2, model1_layers=["layer1"])
+        result = compute_cka(
+            model,
+            model2,
+            dataloader,
+            layers=["layer1"],
+        )[0]
 
-        result = cka(dataloader)
-
-        assert result.shape == (1, 3)
+        # Both models use ["layer1"] due to layer inheritance
+        assert result.shape == (1, 1)
 
     def test_transformer_output(self, model2, dataloader):
         model = TransformerOutputModel()
-        cka = CKA(model, model2, model1_layers=["layer1"])
+        result = compute_cka(
+            model,
+            model2,
+            dataloader,
+            layers=["layer1"],
+        )[0]
 
-        result = cka(dataloader)
-
-        assert result.shape == (1, 3)
+        # Both models use ["layer1"] due to layer inheritance
+        assert result.shape == (1, 1)
 
     def test_output_greater_than_2d_flattened(self, model2, image_dataloader):
         model = Conv3DModel()
-        cka = CKA(model, model, model1_layers=["conv"], model2_layers=["conv"])
-
-        result = cka(image_dataloader)
+        result = compute_cka(
+            model,
+            model,
+            image_dataloader,
+            layers=["conv"],
+            model2_layers=["conv"],
+        )[0]
 
         assert result.shape == (1, 1)
 
@@ -306,40 +305,26 @@ class TestCompare:
         cka = CKA(model1, model2)
 
         with pytest.raises(RuntimeError, match="Hooks not registered"):
-            cka.compare(dataloader)
+            cka._compare(dataloader)
 
     def test_small_batch_raises_error(self, model1, model2, small_batch_dataloader):
-        cka = CKA(model1, model2)
-
         with pytest.raises(ValueError, match="HSIC requires batch size > 3"):
-            cka(small_batch_dataloader)
-
-    def test_dataloader2_none_uses_same(self, model1, dataloader):
-        cka = CKA(model1, model1)
-
-        result = cka(dataloader, dataloader2=None)
-
-        diagonal = torch.diagonal(result)
-        assert torch.allclose(diagonal, torch.ones_like(diagonal), atol=1e-5)
+            compute_cka(model1, model2, small_batch_dataloader)
 
     def test_progress_false(self, model1, model2, dataloader):
-        cka = CKA(model1, model2)
-
-        result = cka(dataloader, progress=False)
+        result = compute_cka(model1, model2, dataloader, progress=False)[0]
 
         assert result.shape == (3, 3)
 
     def test_progress_true(self, model1, model2, dataloader):
-        cka = CKA(model1, model2)
-
-        result = cka(dataloader, progress=True)
+        result = compute_cka(model1, model2, dataloader, progress=True)[0]
 
         assert result.shape == (3, 3)
 
     def test_verbose_output(self, model1, model2, dataloader, capsys):
-        cka = CKA(model1, model2)
-
-        result = cka(dataloader, verbose=True, progress=False)
+        result = compute_cka(model1, model2, dataloader, verbose=True, progress=False)[
+            0
+        ]
 
         captured = capsys.readouterr()
         assert "Batch 1/4" in captured.out
@@ -347,16 +332,16 @@ class TestCompare:
         assert "Mean CKA:" in captured.out
         assert result.shape[0] > 0
 
-    def test_two_dataloaders(self, model1, model2, dataloader):
+    def test_multiple_dataloaders(self, model1, model2, dataloader):
         x2 = torch.randn(32, 10)
         dataset2 = TensorDataset(x2)
         dataloader2 = DataLoader(dataset2, batch_size=8)
 
-        cka = CKA(model1, model2)
+        results = compute_cka(model1, model2, dataloader, dataloader2, progress=False)
 
-        result = cka(dataloader, dataloader2=dataloader2)
-
-        assert result.shape == (3, 3)
+        assert len(results) == 2
+        assert results[0].shape == (3, 3)
+        assert results[1].shape == (3, 3)
 
 
 class TestContextManager:
@@ -395,7 +380,7 @@ class TestContextManager:
         cka = CKA(model1, model2)
 
         with cka:
-            cka.compare(dataloader, progress=False)
+            cka._compare(dataloader, progress=False)
 
         if cka._is_same_model:
             assert len(cka._shared_features) == 0
@@ -404,55 +389,39 @@ class TestContextManager:
             assert len(cka._model2_layer_to_feature) == 0
 
 
-class TestCall:
-    def test_call_as_context_plus_compare(self, model1, model2, dataloader):
-        cka = CKA(model1, model2)
-
-        result = cka(dataloader)
-
-        assert result.shape == (3, 3)
-        assert len(cka._hook_handles) == 0
-
-
 class TestAccumulateHsic:
-    def test_same_model_same_layers_uses_hsic_outer(self, model1, dataloader):
-        cka = CKA(
+    def test_same_model_same_layers_uses_hsic_cross(self, model1, dataloader):
+        result = compute_cka(
             model1,
             model1,
-            model1_layers=["layer1", "layer2"],
+            dataloader,
+            layers=["layer1", "layer2"],
             model2_layers=["layer1", "layer2"],
-        )
-
-        result = cka(dataloader)
+        )[0]
 
         diagonal = torch.diagonal(result)
         assert torch.allclose(diagonal, torch.ones_like(diagonal), atol=1e-5)
 
     def test_same_model_different_layers_uses_hsic(self, model1, dataloader):
-        cka = CKA(
+        result = compute_cka(
             model1,
             model1,
-            model1_layers=["layer1", "layer2"],
+            dataloader,
+            layers=["layer1", "layer2"],
             model2_layers=["layer2", "layer3"],
-        )
-
-        result = cka(dataloader)
+        )[0]
 
         assert result.shape == (2, 2)
 
     def test_different_models_uses_hsic(self, model1, model2, dataloader):
-        cka = CKA(model1, model2)
-
-        result = cka(dataloader)
+        result = compute_cka(model1, model2, dataloader)[0]
 
         assert result.shape == (3, 3)
 
 
 class TestComputeCkaMatrix:
     def test_values_in_0_1_range(self, model1, model2, dataloader):
-        cka = CKA(model1, model1)
-
-        result = cka(dataloader)
+        result = compute_cka(model1, model1, dataloader)[0]
 
         assert torch.all(result >= -0.1)
         assert torch.all(result <= 1.1)
@@ -497,25 +466,9 @@ class TestClearFeatures:
             assert len(cka._model2_layer_to_feature) == 0
 
 
-class TestExport:
-    def test_export_structure(self, model1, model2, dataloader):
-        cka = CKA(model1, model2, model1_name="Model1", model2_name="Model2")
-        result = cka(dataloader)
-
-        exported = cka.export(result)
-
-        assert "model1_name" in exported
-        assert "model2_name" in exported
-        assert "model1_layers" in exported
-        assert "model2_layers" in exported
-        assert "cka_matrix" in exported
-        assert exported["model1_name"] == "Model1"
-        assert exported["model2_name"] == "Model2"
-
-
 class TestSameModelSharedFeatures:
     def test_shared_layer_to_module_created(self, model1):
-        cka = CKA(model1, model1, model1_layers=["layer1"], model2_layers=["layer2"])
+        cka = CKA(model1, model1, layers=["layer1"], model2_layers=["layer2"])
 
         assert hasattr(cka, "_shared_layer_to_module")
         assert "layer1" in cka._shared_layer_to_module

@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from cka.hsic import hsic, hsic_outer
+from cka.hsic import hsic, hsic_cross
 
 
 class TestHsic:
@@ -84,7 +84,7 @@ class TestHsicOuter:
         grams_x = torch.randn(5, 8, 8)
         grams_y = torch.randn(3, 8, 8)
 
-        result = hsic_outer(grams_x, grams_y)
+        result = hsic_cross(grams_x, grams_y)
 
         assert result.shape == (5, 3)
 
@@ -92,56 +92,56 @@ class TestHsicOuter:
         grams_x = torch.randn(5, 8)
         grams_y = torch.randn(3, 8, 8)
 
-        with pytest.raises(ValueError, match="hsic_outer requires 3D tensors"):
-            hsic_outer(grams_x, grams_y)
+        with pytest.raises(ValueError, match="hsic_cross requires 3D tensors"):
+            hsic_cross(grams_x, grams_y)
 
     def test_non_3d_input_y_raises_error(self):
         grams_x = torch.randn(5, 8, 8)
         grams_y = torch.randn(3, 8, 8, 2)
 
-        with pytest.raises(ValueError, match="hsic_outer requires 3D tensors"):
-            hsic_outer(grams_x, grams_y)
+        with pytest.raises(ValueError, match="hsic_cross requires 3D tensors"):
+            hsic_cross(grams_x, grams_y)
 
     def test_non_square_matrix_x_raises_error(self):
         grams_x = torch.randn(5, 8, 6)
         grams_y = torch.randn(3, 8, 8)
 
-        with pytest.raises(ValueError, match="hsic_outer requires square matrices"):
-            hsic_outer(grams_x, grams_y)
+        with pytest.raises(ValueError, match="hsic_cross requires square matrices"):
+            hsic_cross(grams_x, grams_y)
 
     def test_non_square_matrix_y_raises_error(self):
         grams_x = torch.randn(5, 8, 8)
         grams_y = torch.randn(3, 8, 6)
 
-        with pytest.raises(ValueError, match="hsic_outer requires square matrices"):
-            hsic_outer(grams_x, grams_y)
+        with pytest.raises(ValueError, match="hsic_cross requires square matrices"):
+            hsic_cross(grams_x, grams_y)
 
     def test_mismatched_sample_dimension_raises_error(self):
         grams_x = torch.randn(5, 8, 8)
         grams_y = torch.randn(3, 10, 10)
 
         with pytest.raises(ValueError, match="must have same sample dimension"):
-            hsic_outer(grams_x, grams_y)
+            hsic_cross(grams_x, grams_y)
 
     def test_n_equals_3_raises_error(self):
         grams_x = torch.randn(5, 3, 3)
         grams_y = torch.randn(3, 3, 3)
 
-        with pytest.raises(ValueError, match="hsic_outer requires n > 3"):
-            hsic_outer(grams_x, grams_y)
+        with pytest.raises(ValueError, match="hsic_cross requires n > 3"):
+            hsic_cross(grams_x, grams_y)
 
     def test_n_equals_1_raises_error(self):
         grams_x = torch.randn(5, 1, 1)
         grams_y = torch.randn(3, 1, 1)
 
-        with pytest.raises(ValueError, match="hsic_outer requires n > 3"):
-            hsic_outer(grams_x, grams_y)
+        with pytest.raises(ValueError, match="hsic_cross requires n > 3"):
+            hsic_cross(grams_x, grams_y)
 
     def test_symmetry_same_inputs(self):
         grams = torch.randn(4, 8, 8)
         grams = grams + grams.transpose(-1, -2)
 
-        result = hsic_outer(grams, grams)
+        result = hsic_cross(grams, grams)
 
         assert torch.allclose(result, result.T, atol=1e-5)
 
@@ -152,7 +152,7 @@ class TestHsicOuter:
         grams_x = grams_x + grams_x.transpose(-1, -2)
         grams_y = grams_y + grams_y.transpose(-1, -2)
 
-        outer_result = hsic_outer(grams_x, grams_y)
+        outer_result = hsic_cross(grams_x, grams_y)
         hsic_xy, _, _ = hsic(grams_x, grams_y)
 
         assert torch.allclose(outer_result, hsic_xy, atol=1e-5)

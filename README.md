@@ -10,7 +10,6 @@
 
 </div>
 
-
 <p align="center">
     <picture align="center">
         <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/e5f5c51b-4298-424c-81dd-02657af60247">
@@ -23,12 +22,10 @@
   <i><b>3500%</b> faster CKA computation across all layers of two distinct ResNet-18 models on CIFAR-10 using NVIDIA H100 GPUs</i>
 </p>
 
-
 - ⚡️ Fastest among CKA libraries thanks to **vectorized ops** & **GPU acceleration**
 - 📦 Efficient memory management with explicit deallocation
 - 🧠 Supports HuggingFace models, DataParallel, and DDP
 - 🎨 Customizable visualizations: heatmaps and line charts
-
 
 ## 📦 Installation
 
@@ -47,34 +44,17 @@ uv add pytorch-cka
 ### Basic Usage
 
 ```python
-from torch.utils.data import DataLoader
-from cka import CKA
+from cka import compute_cka
 
-pretrained_model = ...  # e.g. pretrained ResNet-18
-fine_tuned_model = ...  # e.g. fine-tuned ResNet-18
-
-layers = ["layer1", "layer2", "layer3", "fc"]
-
-dataloader = DataLoader(..., batch_size=128)
-
-cka = CKA(
-    model1=pretrained_model,
-    model2=fine_tuned_model,
-    model1_name="ResNet-18 (pretrained)",
-    model2_name="ResNet-18 (fine-tuned)",
-    model1_layers=layers,
-    model2_layers=layers,
-    device="cuda"
+cka_matrices = compute_cka(
+    model1,
+    model2,
+    [dataloader1, dataloader2, dataloader3],
+    layers=["layer1", "layer2", "layer3", "fc"],
+    device=device,
 )
 
-# Most convenient usage (auto context manager)
-cka_matrix = cka(dataloader)
-cka_result = cka.export(cka_matrix)
-
-# Or explicit control
-with cka:
-    cka_matrix = cka.compare(dataloader)
-    cka_result = cka.export(cka_matrix)
+# compute_cka returns one matrix per dataloader, in order
 ```
 
 ### Visualization
@@ -133,7 +113,6 @@ fig, ax = plot_cka_trend(
       <td align="center">Multiple Trends</td>
     </tr>
 </table>
-
 
 ## 📚 References
 
