@@ -55,7 +55,7 @@ cka_matrices = compute_cka(
 )
 
 for cka_matrix in cka_matrices:
-  print(cka_matrix)
+    print(cka_matrix)
 ```
 
 ### Visualization
