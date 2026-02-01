@@ -132,15 +132,18 @@ fig, ax = plot_cka_trend(
     labels=RESNET18_LAYERS,
     markers=['o'],
     xlabel='Epoch',
-    ylabel='CKA Similarity vs Epoch 0',
-    title='ResNet-18 CKA Trends Across Epochs (CIFAR-10)',
+    ylabel='CKA Score',
+    title='Pretrained vs. Fine-tuned Across Epochs (ResNet-18)',
     legend=True,
 )
 
 fig, ax = plot_cka_layer_trend(
-    cka_matrix,
+    cka_matrices,
     layers=RESNET18_LAYERS,
-    title=f'ResNet-18 CKA Diagonal (Epoch {EPOCHS})',
+    labels=cka_loader_names,
+    ylabel='CKA Score',
+    title='Pretrained vs. Fine-tuned Across Layers (ResNet-18)',
+    legend=True,
 )
 ```
 
