@@ -29,6 +29,7 @@ from .hsic import hsic, hsic_cross
 from .viz import (
     plot_cka_comparison,
     plot_cka_heatmap,
+    plot_cka_layer_trend,
     plot_cka_trend,
     plot_cka_trend_with_range,
     save_figure,
@@ -41,6 +42,7 @@ __all__ = [
     "hsic",
     "hsic_cross",
     "plot_cka_heatmap",
+    "plot_cka_layer_trend",
     "plot_cka_trend",
     "plot_cka_trend_with_range",
     "plot_cka_comparison",

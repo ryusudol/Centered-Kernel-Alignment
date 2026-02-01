@@ -12,14 +12,14 @@
 
 <p align="center">
     <picture align="center">
-        <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/5d1335fe-bdde-4065-8c96-33c0671c9334">
-        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/ebe24044-902f-4ccb-8575-38042419e40e">
-        <img alt="A bar chart with benchmark results in light mode" src="https://github.com/user-attachments/assets/5d1335fe-bdde-4065-8c96-33c0671c9334" width="100%" />
+        <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/a20bb8fb-9485-4259-8239-51ba66fcd49c">
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/60a6dc50-6368-4eb9-9145-02a7d6b98961">
+        <img alt="A bar chart with benchmark results in light mode" src="https://github.com/user-attachments/assets/a20bb8fb-9485-4259-8239-51ba66fcd49c" width="100%" />
     </picture>
 </p>
 
 <p align="center">
-  <i><b>1580%</b> faster CKA computation across 18 representational layers of ResNet-18 models on CIFAR-10 using NVIDIA H100 GPUs</i>
+  <i><b>44x</b> faster CKA computation across 18 representational layers of ResNet-18 models on CIFAR-10 using NVIDIA H100 GPUs</i>
 </p>
 
 - ⚡️ Fastest among CKA libraries thanks to **vectorized ops** & **GPU acceleration**
@@ -45,12 +45,31 @@ uv add pytorch-cka
 
 ```python
 from cka import compute_cka
+from torch.utils.data import DataLoader
+from torchvision.models import resnet18, resnet34
+
+resnet_18 = resnet18(pretrained=True)
+resnet_34 = resnet34(pretrained=True)
+
+dataloader1 = Dataloader(your_dataset1, batch_size=bach_size, shuffle=False, num_workers=4)
+dataloader2 = Dataloader(your_dataset2, batch_size=bach_size, shuffle=False, num_workers=4)
+dataloader3 = Dataloader(your_dataset3, batch_size=bach_size, shuffle=False, num_workers=4)
+dataloaders = [dataloader1, dataloader2, dataloader3]
+
+layers = [
+    'conv1',
+    'layer1.0.conv1',
+    'layer2.0.conv1',
+    'layer3.0.conv1',
+    'layer4.0.conv1',
+    'fc',
+]
 
 cka_matrices = compute_cka(
-    model1,
-    model2,
-    [dataloader1, dataloader2, dataloader3],
-    layers=["layer1", "layer2", "layer3"],
+    resnet_18,
+    resnet_34,
+    dataloaders,
+    layers=layers,
     device=device,
 )
 
@@ -116,12 +135,12 @@ fig, ax = plot_cka_trend(
 
 <table>
     <tr>
-      <td><img src="https://github.com/user-attachments/assets/d5a42b85-36a4-4778-a13d-1a3a76f55b10" alt="Cross model CKA scores trends" width="100%"/></td>
-      <td><img src="https://github.com/user-attachments/assets/6af56561-1e1d-45a9-8af7-796ae5e434d0" alt="Multiple trends comparison" width="100%"/></td>
+      <td><img src="https://github.com/user-attachments/assets/70643ff3-33a2-4733-bde4-1faefbb9b741" alt="CKA Score Trend Across Epochs" width="100%"/></td>
+      <td><img src="https://github.com/user-attachments/assets/72e199ee-fa9f-40e3-ad65-10966ee31ebe" alt="CKA Score Trend Across Layers" width="100%"/></td>
     </tr>
     <tr>
-      <td align="center">Cross Model CKA Scores Trends</td>
-      <td align="center">Multiple Trends</td>
+      <td align="center">CKA Score Trend Across Epochs</td>
+      <td align="center">CKA Score Trend Across Layers</td>
     </tr>
 </table>
 

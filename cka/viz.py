@@ -4,7 +4,7 @@ This module provides publication-quality visualization functions that
 always return (Figure, Axes) tuples for further customization.
 """
 
-from typing import List, Literal, Tuple
+from typing import List, Literal, Sequence, Tuple
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -12,6 +12,128 @@ import numpy as np
 import torch
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+
+
+def _to_numpy(values: torch.Tensor | np.ndarray) -> np.ndarray:
+    if isinstance(values, torch.Tensor):
+        return values.detach().cpu().numpy()
+    return np.asarray(values)
+
+
+def _normalize_series(
+    values: torch.Tensor | np.ndarray | Sequence[torch.Tensor | np.ndarray],
+) -> List[np.ndarray]:
+    if isinstance(values, (torch.Tensor, np.ndarray)):
+        array = _to_numpy(values)
+        if array.ndim == 1:
+            return [array]
+        if array.ndim == 2:
+            return [array[i] for i in range(array.shape[0])]
+        raise ValueError("values must be 1D or 2D.")
+    if isinstance(values, (list, tuple)):
+        if len(values) == 0:
+            raise ValueError("values must contain at least one series.")
+        if all(np.isscalar(item) for item in values):
+            return [np.asarray(values)]
+        series = []
+        for item in values:
+            array = _to_numpy(item)
+            if array.ndim != 1:
+                raise ValueError("Each series must be 1D.")
+            series.append(array)
+        return series
+    raise TypeError("Unsupported values type.")
+
+
+def _normalize_x_values(
+    x_values: Sequence[float] | Sequence[Sequence[float]] | np.ndarray | None,
+    n_lines: int,
+    n_points: int,
+) -> List[np.ndarray]:
+    if x_values is None:
+        return [np.arange(n_points) for _ in range(n_lines)]
+
+    if isinstance(x_values, np.ndarray) and x_values.ndim == 2:
+        if x_values.shape != (n_lines, n_points):
+            raise ValueError("x_values shape must match (n_lines, n_points).")
+        return [x_values[i] for i in range(n_lines)]
+
+    if isinstance(x_values, (list, tuple)) and len(x_values) > 0:
+        first = x_values[0]
+        if isinstance(first, (list, tuple, np.ndarray)) and not np.isscalar(first):
+            if len(x_values) != n_lines:
+                raise ValueError("x_values must match number of lines.")
+            series = []
+            for item in x_values:
+                arr = np.asarray(item)
+                if arr.ndim != 1 or len(arr) != n_points:
+                    raise ValueError(
+                        "Each x_values series must be 1D and match length."
+                    )
+                series.append(arr)
+            return series
+
+    arr = np.asarray(x_values)
+    if arr.ndim != 1 or len(arr) != n_points:
+        raise ValueError("x_values must be 1D and match series length.")
+    return [arr for _ in range(n_lines)]
+
+
+def _normalize_per_line(values: Sequence | None, n_lines: int, name: str) -> List:
+    if values is None:
+        return [None] * n_lines
+    if isinstance(values, (list, tuple)):
+        if len(values) == n_lines:
+            return list(values)
+        if len(values) == 1:
+            return list(values) * n_lines
+        raise ValueError(f"{name} length must match number of lines.")
+    return [values for _ in range(n_lines)]
+
+
+def _blend_color(
+    color: Sequence[float], target: Sequence[float], alpha: float
+) -> tuple:
+    base = np.array(color[:3], dtype=float)
+    tgt = np.array(target[:3], dtype=float)
+    blended = base * (1.0 - alpha) + tgt * alpha
+    return tuple(blended.tolist())
+
+
+def _generate_tab10_colors(
+    n_lines: int, overflow: Literal["variant", "repeat", "tab20"]
+) -> List:
+    base = list(plt.get_cmap("tab10").colors)
+    if n_lines <= len(base):
+        return base[:n_lines]
+
+    if overflow == "repeat":
+        return [base[i % len(base)] for i in range(n_lines)]
+
+    if overflow == "tab20":
+        tab20 = list(plt.get_cmap("tab20").colors)
+        if n_lines <= len(tab20):
+            return tab20[:n_lines]
+        return [tab20[i % len(tab20)] for i in range(n_lines)]
+
+    variants = [
+        ((1.0, 1.0, 1.0), 0.35),
+        ((0.0, 0.0, 0.0), 0.35),
+        ((1.0, 1.0, 1.0), 0.6),
+        ((0.0, 0.0, 0.0), 0.6),
+        ((1.0, 1.0, 1.0), 0.8),
+        ((0.0, 0.0, 0.0), 0.8),
+    ]
+    colors = []
+    for idx in range(n_lines):
+        base_color = base[idx % len(base)]
+        cycle = idx // len(base)
+        if cycle == 0:
+            colors.append(base_color)
+            continue
+        target, alpha = variants[min(cycle - 1, len(variants) - 1)]
+        colors.append(_blend_color(base_color, target, alpha))
+    return colors
 
 
 def plot_cka_heatmap(
@@ -149,235 +271,6 @@ def plot_cka_heatmap(
     return fig, ax
 
 
-def plot_cka_trend(
-    cka_values: torch.Tensor | List[torch.Tensor] | np.ndarray | List[np.ndarray],
-    labels: List[str] | None = None,
-    x_values: List[int | float] | None = None,
-    xlabel: str = "Layer",
-    ylabel: str = "CKA Similarity",
-    title: str | None = None,
-    figsize: Tuple[float, float] = (10, 6),
-    ax: Axes | None = None,
-    colors: List[str] | None = None,
-    linestyles: List[str] | None = None,
-    markers: List[str] | None = None,
-    legend: bool = True,
-    grid: bool = True,
-    show: bool = False,
-) -> Tuple[Figure, Axes]:
-    """Plot CKA similarity trends (e.g., diagonal values or across epochs).
-
-    Args:
-        cka_values: Single array of shape (n_points,) or list of arrays.
-        labels: Legend labels for each line.
-        x_values: X-axis values. Defaults to 0, 1, 2, ...
-        xlabel: X-axis label.
-        ylabel: Y-axis label.
-        title: Plot title.
-        figsize: Figure size.
-        ax: Existing axes.
-        colors: Line colors.
-        linestyles: Line styles.
-        markers: Marker styles.
-        legend: Show legend.
-        grid: Show grid.
-        show: Whether to call plt.show().
-
-    Returns:
-        Tuple of (Figure, Axes).
-    """
-    # Normalize input to list of arrays
-    if isinstance(cka_values, (torch.Tensor, np.ndarray)):
-        arr = (
-            cka_values.detach().cpu().numpy()
-            if isinstance(cka_values, torch.Tensor)
-            else cka_values
-        )
-        if arr.ndim == 1:
-            cka_values = [arr]
-        else:
-            cka_values = [arr[i] for i in range(len(arr))]
-    else:
-        cka_values = [
-            v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else np.asarray(v)
-            for v in cka_values
-        ]
-
-    # Create figure
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-    else:
-        fig = ax.get_figure()
-
-    n_lines = len(cka_values)
-
-    # Default styling
-    if colors is None:
-        cmap = plt.colormaps.get_cmap("tab10")
-        colors = [cmap(i / max(n_lines - 1, 1)) for i in range(n_lines)]
-    if linestyles is None:
-        linestyles = ["-"] * n_lines
-    if markers is None:
-        markers = ["o"] * n_lines
-    if labels is None:
-        labels = [f"Line {i}" for i in range(n_lines)]
-
-    # Plot each line
-    for i, values in enumerate(cka_values):
-        x = x_values if x_values is not None else list(range(len(values)))
-        ax.plot(
-            x,
-            values,
-            color=colors[i % len(colors)],
-            linestyle=linestyles[i % len(linestyles)],
-            marker=markers[i % len(markers)],
-            label=labels[i] if i < len(labels) else None,
-            markersize=6,
-        )
-
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    if title:
-        ax.set_title(title)
-    if legend and n_lines > 1:
-        ax.legend()
-    if grid:
-        ax.grid(True, alpha=0.3)
-
-    ax.set_ylim(0, 1.05)  # CKA is in [0, 1]
-
-    fig.tight_layout()
-
-    if show:
-        plt.show()
-
-    return fig, ax
-
-
-def plot_cka_trend_with_range(
-    mean_values: torch.Tensor | np.ndarray,
-    min_values: torch.Tensor | np.ndarray,
-    max_values: torch.Tensor | np.ndarray,
-    label: str | None = None,
-    x_values: List[int | float] | None = None,
-    xlabel: str = "Layer",
-    ylabel: str = "CKA Similarity",
-    title: str | None = None,
-    figsize: Tuple[float, float] = (10, 6),
-    ax: Axes | None = None,
-    color: str | None = None,
-    style: Literal["fill", "errorbar"] = "fill",
-    alpha: float = 0.3,
-    marker: str = "o",
-    linestyle: str = "-",
-    legend: bool = True,
-    grid: bool = True,
-    show: bool = False,
-) -> Tuple[Figure, Axes]:
-    """Plot CKA trend line with min-max range visualization.
-
-    Args:
-        mean_values: Mean CKA values of shape (n_points,).
-        min_values: Minimum CKA values of shape (n_points,).
-        max_values: Maximum CKA values of shape (n_points,).
-        label: Legend label for the line.
-        x_values: X-axis values. Defaults to 0, 1, 2, ...
-        xlabel: X-axis label.
-        ylabel: Y-axis label.
-        title: Plot title.
-        figsize: Figure size.
-        ax: Existing axes.
-        color: Line and fill color. If None, uses default color.
-        style: Visualization style - "fill" for shaded area, "errorbar" for error bars.
-        alpha: Transparency for fill area (only used with style="fill").
-        marker: Marker style.
-        linestyle: Line style.
-        legend: Show legend.
-        grid: Show grid.
-        show: Whether to call plt.show().
-
-    Returns:
-        Tuple of (Figure, Axes).
-    """
-
-    # Convert to numpy
-    def to_numpy(arr):
-        if isinstance(arr, torch.Tensor):
-            return arr.detach().cpu().numpy()
-        return np.asarray(arr)
-
-    mean_arr = to_numpy(mean_values)
-    min_arr = to_numpy(min_values)
-    max_arr = to_numpy(max_values)
-
-    # Create figure
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
-    else:
-        fig = ax.get_figure()
-
-    # X values
-    x = x_values if x_values is not None else list(range(len(mean_arr)))
-
-    # Default color
-    if color is None:
-        color = "#4e79a7"
-
-    if style == "fill":
-        # Plot mean line
-        ax.plot(
-            x,
-            mean_arr,
-            color=color,
-            linestyle=linestyle,
-            marker=marker,
-            label=label,
-            markersize=6,
-        )
-        # Fill between min and max
-        ax.fill_between(
-            x,
-            min_arr,
-            max_arr,
-            color=color,
-            alpha=alpha,
-        )
-    elif style == "errorbar":
-        # Compute error bounds (asymmetric errors)
-        yerr_lower = mean_arr - min_arr
-        yerr_upper = max_arr - mean_arr
-        ax.errorbar(
-            x,
-            mean_arr,
-            yerr=[yerr_lower, yerr_upper],
-            color=color,
-            linestyle=linestyle,
-            marker=marker,
-            label=label,
-            markersize=6,
-            capsize=3,
-            capthick=1,
-        )
-
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    if title:
-        ax.set_title(title)
-    if legend and label:
-        ax.legend()
-    if grid:
-        ax.grid(True, alpha=0.3)
-
-    ax.set_ylim(0, 1.05)  # CKA is in [0, 1]
-
-    fig.tight_layout()
-
-    if show:
-        plt.show()
-
-    return fig, ax
-
-
 def plot_cka_comparison(
     matrices: List[torch.Tensor | np.ndarray],
     titles: List[str],
@@ -463,6 +356,286 @@ def plot_cka_comparison(
         plt.show()
 
     return fig, axes
+
+
+def plot_cka_trend(
+    values: torch.Tensor | np.ndarray | Sequence[torch.Tensor | np.ndarray],
+    x_values: Sequence[float] | Sequence[Sequence[float]] | np.ndarray | None = None,
+    labels: Sequence[str] | None = None,
+    colors: Sequence | None = None,
+    linestyles: Sequence[str] | None = None,
+    markers: Sequence[str] | None = None,
+    xlabel: str = "Epoch",
+    ylabel: str = "CKA Score",
+    title: str | None = None,
+    figsize: Tuple[float, float] | None = None,
+    ax: Axes | None = None,
+    legend: bool = False,
+    grid: bool = True,
+    show: bool = False,
+    ylim: Tuple[float, float] | None = (0.0, 1.05),
+    show_range: bool = False,
+    range_values: torch.Tensor | np.ndarray | Sequence | Tuple | None = None,
+    range_alpha: float = 0.2,
+    color_overflow: Literal["variant", "repeat", "tab20"] = "variant",
+) -> Tuple[Figure, Axes]:
+    """Plot CKA trend lines over epochs, steps, or layers.
+
+    Args:
+        values: 1D array for a single line, 2D array (n_lines, n_points),
+            or a list of 1D arrays.
+        x_values: Optional x-axis values (shared) or per-line x-axis values.
+        labels: Legend labels for lines.
+        colors: Line colors. Defaults to Tableau10 (tab10) with overflow handling.
+        linestyles: Line styles per line.
+        markers: Marker styles per line.
+        xlabel: X-axis label.
+        ylabel: Y-axis label.
+        title: Plot title.
+        figsize: Figure size (width, height).
+        ax: Existing axes to plot on.
+        legend: Show legend (only if multiple lines).
+        grid: Show grid.
+        show: Whether to call plt.show().
+        ylim: Y-axis limits. Defaults to (0, 1.05).
+        show_range: Whether to show value ranges as shaded bands.
+        range_values: Standard deviation values for shading, or (lower, upper) tuple.
+        range_alpha: Alpha for shaded range.
+        color_overflow: Strategy for >10 lines: "variant", "repeat", or "tab20".
+
+    Returns:
+        Tuple of (Figure, Axes).
+    """
+    series = _normalize_series(values)
+    n_lines = len(series)
+    n_points = len(series[0])
+    if any(len(line) != n_points for line in series):
+        raise ValueError("All series must have the same length.")
+
+    x_series = _normalize_x_values(x_values, n_lines, n_points)
+
+    if colors is None:
+        colors = _generate_tab10_colors(n_lines, color_overflow)
+    colors = _normalize_per_line(colors, n_lines, "colors")
+    linestyles = _normalize_per_line(linestyles, n_lines, "linestyles")
+    markers = _normalize_per_line(markers, n_lines, "markers")
+    labels = _normalize_per_line(labels, n_lines, "labels")
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = ax.get_figure()
+
+    lower_series = upper_series = None
+    if show_range:
+        if range_values is None:
+            raise ValueError(
+                "show_range=True requires range_values or use plot_cka_trend_with_range."
+            )
+        if isinstance(range_values, tuple) and len(range_values) == 2:
+            lower_series = _normalize_series(range_values[0])
+            upper_series = _normalize_series(range_values[1])
+            if len(lower_series) == 1 and n_lines > 1:
+                lower_series *= n_lines
+            if len(upper_series) == 1 and n_lines > 1:
+                upper_series *= n_lines
+        else:
+            std_series = _normalize_series(range_values)
+            if len(std_series) == 1 and n_lines > 1:
+                std_series *= n_lines
+            if len(std_series) != n_lines:
+                raise ValueError("range_values must match number of lines.")
+            lower_series = [s - r for s, r in zip(series, std_series)]
+            upper_series = [s + r for s, r in zip(series, std_series)]
+
+        if len(lower_series) != n_lines or len(upper_series) != n_lines:
+            raise ValueError("range_values must match number of lines.")
+        for lower, upper in zip(lower_series, upper_series):
+            if len(lower) != n_points or len(upper) != n_points:
+                raise ValueError("range_values length must match series length.")
+
+    for idx, (line, x_line) in enumerate(zip(series, x_series)):
+        ax.plot(
+            x_line,
+            line,
+            color=colors[idx],
+            linestyle=linestyles[idx],
+            marker=markers[idx],
+            label=labels[idx],
+        )
+        if show_range:
+            ax.fill_between(
+                x_line,
+                lower_series[idx],
+                upper_series[idx],
+                color=colors[idx],
+                alpha=range_alpha,
+                linewidth=0,
+            )
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title is not None:
+        ax.set_title(title)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    ax.grid(grid, linestyle="--", alpha=0.3)
+
+    if legend and n_lines > 1:
+        if all(label is None for label in labels):
+            ax.legend([f"Series {i + 1}" for i in range(n_lines)])
+        else:
+            ax.legend()
+
+    fig.tight_layout()
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def plot_cka_trend_with_range(
+    values: torch.Tensor | np.ndarray | Sequence[torch.Tensor | np.ndarray],
+    x_values: Sequence[float] | Sequence[Sequence[float]] | np.ndarray | None = None,
+    labels: Sequence[str] | None = None,
+    colors: Sequence | None = None,
+    linestyles: Sequence[str] | None = None,
+    markers: Sequence[str] | None = None,
+    xlabel: str = "Epoch",
+    ylabel: str = "CKA Similarity",
+    title: str | None = None,
+    figsize: Tuple[float, float] | None = None,
+    ax: Axes | None = None,
+    legend: bool = False,
+    grid: bool = True,
+    show: bool = False,
+    ylim: Tuple[float, float] | None = (0.0, 1.05),
+    range_alpha: float = 0.2,
+    color_overflow: Literal["variant", "repeat", "tab20"] = "variant",
+) -> Tuple[Figure, Axes]:
+    """Plot mean ± std trends from repeated CKA measurements.
+
+    Args:
+        values: 2D array (n_runs, n_points) for a single line, 3D array
+            (n_lines, n_runs, n_points), or a list of 2D arrays.
+    """
+    if isinstance(values, (torch.Tensor, np.ndarray)):
+        array = _to_numpy(values)
+        if array.ndim == 2:
+            grouped = [array]
+        elif array.ndim == 3:
+            grouped = [array[i] for i in range(array.shape[0])]
+        else:
+            raise ValueError("values must be 2D or 3D for range plotting.")
+    elif isinstance(values, (list, tuple)):
+        if len(values) == 0:
+            raise ValueError("values must contain at least one group.")
+        grouped = []
+        for item in values:
+            array = _to_numpy(item)
+            if array.ndim != 2:
+                raise ValueError("Each group must be 2D (n_runs, n_points).")
+            grouped.append(array)
+    else:
+        raise TypeError("Unsupported values type.")
+
+    means = [np.nanmean(group, axis=0) for group in grouped]
+    stds = [np.nanstd(group, axis=0) for group in grouped]
+
+    return plot_cka_trend(
+        means,
+        x_values=x_values,
+        labels=labels,
+        colors=colors,
+        linestyles=linestyles,
+        markers=markers,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        title=title,
+        figsize=figsize,
+        ax=ax,
+        legend=legend,
+        grid=grid,
+        show=show,
+        ylim=ylim,
+        show_range=True,
+        range_values=stds,
+        range_alpha=range_alpha,
+        color_overflow=color_overflow,
+    )
+
+
+def plot_cka_layer_trend(
+    cka_matrices: torch.Tensor | np.ndarray | Sequence[torch.Tensor | np.ndarray],
+    layers: Sequence[str] | None = None,
+    layer_name_depth: int | None = None,
+    labels: Sequence[str] | None = None,
+    colors: Sequence | None = None,
+    linestyles: Sequence[str] | None = None,
+    markers: Sequence[str] | None = None,
+    xlabel: str = "Layer",
+    ylabel: str = "CKA Similarity",
+    title: str | None = None,
+    figsize: Tuple[float, float] | None = None,
+    ax: Axes | None = None,
+    legend: bool = False,
+    grid: bool = True,
+    show: bool = False,
+    ylim: Tuple[float, float] | None = (0.0, 1.05),
+    color_overflow: Literal["variant", "repeat", "tab20"] = "variant",
+) -> Tuple[Figure, Axes]:
+    """Plot diagonal CKA values across layers for one or more matrices."""
+    if isinstance(cka_matrices, (torch.Tensor, np.ndarray)):
+        matrices = [_to_numpy(cka_matrices)]
+    elif isinstance(cka_matrices, (list, tuple)):
+        if len(cka_matrices) == 0:
+            raise ValueError("cka_matrices must contain at least one matrix.")
+        matrices = [_to_numpy(m) for m in cka_matrices]
+    else:
+        raise TypeError("Unsupported cka_matrices type.")
+
+    diagonals = [np.diag(matrix) for matrix in matrices]
+    n_points = len(diagonals[0])
+    if layers is not None and len(layers) != n_points:
+        raise ValueError("layers length must match diagonal length.")
+
+    # Use "o" marker if none specified
+    plot_markers = markers if markers is not None else ["o"]
+
+    fig, ax = plot_cka_trend(
+        diagonals,
+        labels=labels,
+        colors=colors,
+        linestyles=linestyles,
+        markers=plot_markers,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        title=title,
+        figsize=figsize,
+        ax=ax,
+        legend=legend,
+        grid=grid,
+        show=show,
+        ylim=ylim,
+        color_overflow=color_overflow,
+    )
+
+    # Set tick labels
+    tick_indices = list(range(n_points))
+    if layers is not None:
+        if layer_name_depth is not None:
+            shortened = [
+                ".".join(layer.split(".")[-layer_name_depth:]) for layer in layers
+            ]
+        else:
+            shortened = list(layers)
+        ax.set_xticks(tick_indices)
+        ax.set_xticklabels(shortened, rotation=45, ha="right")
+    else:
+        ax.set_xticks(tick_indices)
+
+    return fig, ax
 
 
 def save_figure(
