@@ -377,7 +377,7 @@ def plot_cka_trend(
     show_range: bool = False,
     range_values: torch.Tensor | np.ndarray | Sequence | Tuple | None = None,
     range_alpha: float = 0.2,
-    color_overflow: Literal["variant", "repeat", "tab20"] = "variant",
+    color_overflow: Literal["tab20", "variant", "repeat"] = "tab20",
 ) -> Tuple[Figure, Axes]:
     """Plot CKA trend lines over epochs, steps, or layers.
 
@@ -503,7 +503,7 @@ def plot_cka_trend_with_range(
     linestyles: Sequence[str] | None = None,
     markers: Sequence[str] | None = None,
     xlabel: str = "Epoch",
-    ylabel: str = "CKA Similarity",
+    ylabel: str = "CKA Score",
     title: str | None = None,
     figsize: Tuple[float, float] | None = None,
     ax: Axes | None = None,
@@ -575,7 +575,7 @@ def plot_cka_layer_trend(
     linestyles: Sequence[str] | None = None,
     markers: Sequence[str] | None = None,
     xlabel: str = "Layer",
-    ylabel: str = "CKA Similarity",
+    ylabel: str = "CKA Score",
     title: str | None = None,
     figsize: Tuple[float, float] | None = None,
     ax: Axes | None = None,
@@ -583,7 +583,7 @@ def plot_cka_layer_trend(
     grid: bool = True,
     show: bool = False,
     ylim: Tuple[float, float] | None = (0.0, 1.05),
-    color_overflow: Literal["variant", "repeat", "tab20"] = "variant",
+    color_overflow: Literal["tab20", "variant", "repeat"] = "tab20",
 ) -> Tuple[Figure, Axes]:
     """Plot diagonal CKA values across layers for one or more matrices."""
     if isinstance(cka_matrices, (torch.Tensor, np.ndarray)):

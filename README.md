@@ -125,18 +125,29 @@ from cka import plot_cka_trend
 
 # Plot diagonal (self-similarity across layers)
 diagonal = torch.diag(matrix)
+
 fig, ax = plot_cka_trend(
-    diagonal,
-    labels=["Self-similarity"],
-    xlabel="Layer",
-    ylabel="CKA Score",
+    layer_trends,
+    x_values=epochs,
+    labels=RESNET18_LAYERS,
+    markers=['o'],
+    xlabel='Epoch',
+    ylabel='CKA Similarity vs Epoch 0',
+    title='ResNet-18 CKA Trends Across Epochs (CIFAR-10)',
+    legend=True,
+)
+
+fig, ax = plot_cka_layer_trend(
+    cka_matrix,
+    layers=RESNET18_LAYERS,
+    title=f'ResNet-18 CKA Diagonal (Epoch {EPOCHS})',
 )
 ```
 
 <table>
     <tr>
-      <td><img src="https://github.com/user-attachments/assets/70643ff3-33a2-4733-bde4-1faefbb9b741" alt="CKA Score Trend Across Epochs" width="100%"/></td>
-      <td><img src="https://github.com/user-attachments/assets/72e199ee-fa9f-40e3-ad65-10966ee31ebe" alt="CKA Score Trend Across Layers" width="100%"/></td>
+      <td><img src="https://github.com/user-attachments/assets/7b029b61-dcd3-4461-849e-80546694e993" alt="CKA Score Trend Across Epochs" width="100%"/></td>
+      <td><img src="https://github.com/user-attachments/assets/28dc7708-cede-4e0c-ab34-95fc7188ade7" alt="CKA Score Trend Across Layers" width="100%"/></td>
     </tr>
     <tr>
       <td align="center">CKA Score Trend Across Epochs</td>
