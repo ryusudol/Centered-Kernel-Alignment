@@ -556,6 +556,21 @@ class TestSaveFigure:
 
             assert os.path.exists(path)
 
+    def test_heatmap_transparent_png(self):
+        matrix = torch.rand(4, 4)
+        fig, _ = plot_cka_heatmap(matrix)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "cka_heatmap.png")
+            save_figure(fig, path, transparent=True)
+
+            from PIL import Image
+
+            image = Image.open(path)
+            assert image.mode == "RGBA"
+            alpha = np.array(image)[:, :, 3]
+            assert np.any(alpha < 255)
+
     def test_figure_closed_after_save(self):
         fig, ax = plt.subplots()
         ax.plot([1, 2, 3], [1, 2, 3])

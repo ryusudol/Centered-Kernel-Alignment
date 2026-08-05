@@ -653,6 +653,7 @@ def save_figure(
         dpi: Resolution in dots per inch.
         bbox_inches: Bounding box setting.
         transparent: Whether background should be transparent.
+            Use PNG (or another alpha-capable format) when True.
     """
     fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches, transparent=transparent)
     plt.close(fig)  # Close to free memory

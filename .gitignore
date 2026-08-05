@@ -58,3 +58,6 @@ cka_checkpoint.pt
 CLAUDE.md
 uv.lock
 benchmark_suite/
+
+# Data
+data/

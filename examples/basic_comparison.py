@@ -11,7 +11,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from cka import compute_cka, plot_cka_heatmap, plot_cka_trend
+from cka import compute_cka, plot_cka_heatmap, plot_cka_trend, save_figure
+
+
 
 
 class SimpleCNN(nn.Module):
@@ -110,7 +112,7 @@ def example_self_comparison():
         annot=True,
         title="Self-Comparison: SimpleCNN",
     )
-    fig.savefig("cka_self_comparison.png", dpi=150, bbox_inches="tight")
+    save_figure(fig, "cka_self_comparison.png", transparent=True)
     print("\nSaved: cka_self_comparison.png")
 
 
@@ -151,7 +153,7 @@ def example_two_model_comparison():
         annot=True,
         title="SimpleCNN vs WiderCNN",
     )
-    fig.savefig("cka_two_models.png", dpi=150, bbox_inches="tight")
+    save_figure(fig, "cka_two_models.png", transparent=True)
     print("\nSaved: cka_two_models.png")
 
 
@@ -186,7 +188,7 @@ def example_trend_plot():
         ylabel="CKA Score",
         title="Layer Self-Similarity Across Network",
     )
-    fig.savefig("cka_trend.png", dpi=150, bbox_inches="tight")
+    save_figure(fig, "cka_trend.png", transparent=True)
     print("\nSaved: cka_trend.png")
 
 
