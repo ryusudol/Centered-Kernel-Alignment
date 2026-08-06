@@ -119,16 +119,16 @@ fig, ax = plot_cka_heatmap(
     <tr>
       <td width="63.5%" style="padding:0; vertical-align:top; line-height:0;">
           <picture>
-              <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/90d3e550-db52-42cd-bd43-b95b2a3ecf7b">
-              <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/2acc61a4-b7c8-4178-ac77-aab63c9966bb">
-              <img alt="Self-comparison heatmap" src="https://github.com/user-attachments/assets/2acc61a4-b7c8-4178-ac77-aab63c9966bb" style="display:block; width:100%;" />
+              <source media="(prefers-color-scheme: light)" srcset="docs/figures/identical_resnet18_white.png">
+              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/identical_resnet18_black.png">
+              <img alt="Self-comparison heatmap" src="docs/figures/identical_resnet18_black.png" style="display:block; width:100%;" />
           </picture>
       </td>
       <td width="36.5%" style="padding:0; vertical-align:top; line-height:0;">
           <picture>
-              <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/29c1d4e3-92c7-48e3-8bf8-40045ca6dac9">
-              <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/9584281d-033b-4d16-9456-ddba5431eb40">
-              <img alt="Self-comparison heatmap" src="https://github.com/user-attachments/assets/9584281d-033b-4d16-9456-ddba5431eb40" style="display:block; width:100%;" />
+              <source media="(prefers-color-scheme: light)" srcset="docs/figures/resnet34_vs_18_white.png">
+              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/resnet34_vs_18_black.png">
+              <img alt="Cross-model comparison heatmap" src="docs/figures/resnet34_vs_18_black.png" style="display:block; width:100%;" />
           </picture>
       </td>
     </tr>
@@ -169,8 +169,20 @@ fig, ax = plot_cka_layer_trend(
 
 <table>
     <tr>
-      <td><img src="https://github.com/user-attachments/assets/7b029b61-dcd3-4461-849e-80546694e993" alt="CKA Score Trend Across Epochs" width="100%"/></td>
-      <td><img src="https://github.com/user-attachments/assets/28dc7708-cede-4e0c-ab34-95fc7188ade7" alt="CKA Score Trend Across Layers" width="100%"/></td>
+      <td>
+        <picture>
+          <source media="(prefers-color-scheme: light)" srcset="docs/figures/epoch_trends_white.png">
+          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/epoch_trends_black.png">
+          <img src="docs/figures/epoch_trends_black.png" alt="CKA Score Trend Across Epochs" width="100%"/>
+        </picture>
+      </td>
+      <td>
+        <picture>
+          <source media="(prefers-color-scheme: light)" srcset="docs/figures/layer_trends_white.png">
+          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/layer_trends_black.png">
+          <img src="docs/figures/layer_trends_black.png" alt="CKA Score Trend Across Layers" width="100%"/>
+        </picture>
+      </td>
     </tr>
     <tr>
       <td align="center">CKA Score Trend Across Epochs</td>
