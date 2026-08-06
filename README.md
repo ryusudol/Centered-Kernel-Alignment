@@ -119,16 +119,16 @@ fig, ax = plot_cka_heatmap(
     <tr>
       <td width="63.5%" style="padding:0; vertical-align:top; line-height:0;">
           <picture>
-              <source media="(prefers-color-scheme: light)" srcset="docs/figures/identical_resnet18_white.png">
-              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/identical_resnet18_black.png">
-              <img alt="Self-comparison heatmap" src="docs/figures/identical_resnet18_black.png" style="display:block; width:100%;" />
+              <source media="(prefers-color-scheme: light)" srcset="docs/figures/identical_resnet18_black.png">
+              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/identical_resnet18_white.png">
+              <img alt="Self-comparison heatmap" src="docs/figures/identical_resnet18_white.png" style="display:block; width:100%;" />
           </picture>
       </td>
       <td width="36.5%" style="padding:0; vertical-align:top; line-height:0;">
           <picture>
-              <source media="(prefers-color-scheme: light)" srcset="docs/figures/resnet34_vs_18_white.png">
-              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/resnet34_vs_18_black.png">
-              <img alt="Cross-model comparison heatmap" src="docs/figures/resnet34_vs_18_black.png" style="display:block; width:100%;" />
+              <source media="(prefers-color-scheme: light)" srcset="docs/figures/resnet34_vs_18_black.png">
+              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/resnet34_vs_18_white.png">
+              <img alt="Cross-model comparison heatmap" src="docs/figures/resnet34_vs_18_white.png" style="display:block; width:100%;" />
           </picture>
       </td>
     </tr>
@@ -171,16 +171,16 @@ fig, ax = plot_cka_layer_trend(
     <tr>
       <td>
         <picture>
-          <source media="(prefers-color-scheme: light)" srcset="docs/figures/epoch_trends_white.png">
-          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/epoch_trends_black.png">
-          <img src="docs/figures/epoch_trends_black.png" alt="CKA Score Trend Across Epochs" width="100%"/>
+          <source media="(prefers-color-scheme: light)" srcset="docs/figures/epoch_trends_black.png">
+          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/epoch_trends_white.png">
+          <img src="docs/figures/epoch_trends_white.png" alt="CKA Score Trend Across Epochs" width="100%"/>
         </picture>
       </td>
       <td>
         <picture>
-          <source media="(prefers-color-scheme: light)" srcset="docs/figures/layer_trends_white.png">
-          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/layer_trends_black.png">
-          <img src="docs/figures/layer_trends_black.png" alt="CKA Score Trend Across Layers" width="100%"/>
+          <source media="(prefers-color-scheme: light)" srcset="docs/figures/layer_trends_black.png">
+          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/layer_trends_white.png">
+          <img src="docs/figures/layer_trends_white.png" alt="CKA Score Trend Across Layers" width="100%"/>
         </picture>
       </td>
     </tr>
