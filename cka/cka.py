@@ -371,3 +371,26 @@ def compute_cka(
         for dataloader in dataloaders:
             results.append(cka._compare(dataloader, progress=progress, verbose=verbose))
     return results
+
+
+def cka_from_features(
+    features_x: torch.Tensor | Sequence[torch.Tensor],
+    features_y: torch.Tensor | Sequence[torch.Tensor],
+) -> torch.Tensor:
+    """Compute CKA from pre-extracted feature matrices.
+
+    Accepts 2D ``(n, d)``, 3D ``(L, n, d)``, or a sequence of 2D tensors.
+    """
+
+    def to_grams(feats: torch.Tensor | Sequence[torch.Tensor]) -> torch.Tensor:
+        if isinstance(feats, torch.Tensor):
+            if feats.dim() == 2:
+                feats = feats.unsqueeze(0)
+            return torch.bmm(feats, feats.transpose(1, 2))
+        return torch.stack([f @ f.T for f in feats])
+
+    gx, gy = to_grams(features_x), to_grams(features_y)
+    hsic_xy, hsic_xx, hsic_yy = hsic(gx, gy)
+    denom = torch.sqrt(torch.clamp(hsic_xx.unsqueeze(1) * hsic_yy.unsqueeze(0), min=0.0))
+    denom = torch.where(denom == 0, 1e-6, denom)
+    return torch.clamp(hsic_xy / denom, min=0.0, max=1.0)

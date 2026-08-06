@@ -77,6 +77,26 @@ for cka_matrix in cka_matrices:
     print(cka_matrix)
 ```
 
+### From Pre-extracted Features
+
+If you already have feature matrices, compute CKA without models or dataloaders:
+
+```python
+from cka import cka_from_features
+
+# Single layer: (n_samples, feature_dim)
+cka_matrix = cka_from_features(features_x, features_y)
+
+# Multi-layer: (n_layers, n_samples, feature_dim)
+cka_matrix = cka_from_features(multi_layer_x, multi_layer_y)
+
+# Varying feature dims: list of 2D tensors
+cka_matrix = cka_from_features(
+    [layer1_x, layer2_x],
+    [layer1_y, layer2_y, layer3_y],
+)
+```
+
 ### Visualization
 
 **Heatmap**
