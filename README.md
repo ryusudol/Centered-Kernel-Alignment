@@ -118,18 +118,18 @@ fig, ax = plot_cka_heatmap(
 <table width="100%">
     <tr>
       <td width="63.5%" style="padding:0; vertical-align:top; line-height:0;">
-          <img
-              src="https://github.com/user-attachments/assets/48bfd811-629e-483a-bc63-2a493872289c"
-              alt="Self-comparison heatmap"
-              style="display:block; width:100%;"
-          />
+          <picture>
+              <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/90d3e550-db52-42cd-bd43-b95b2a3ecf7b">
+              <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/2acc61a4-b7c8-4178-ac77-aab63c9966bb">
+              <img alt="Self-comparison heatmap" src="https://github.com/user-attachments/assets/2acc61a4-b7c8-4178-ac77-aab63c9966bb" style="display:block; width:100%;" />
+          </picture>
       </td>
       <td width="36.5%" style="padding:0; vertical-align:top; line-height:0;">
-          <img
-              src="https://github.com/user-attachments/assets/38ad963a-e8ce-4dc1-ab62-73d4f072ceca"
-              alt="Cross-model comparison heatmap"
-              style="display:block; width:100%;"
-          />
+          <picture>
+              <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/29c1d4e3-92c7-48e3-8bf8-40045ca6dac9">
+              <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/9584281d-033b-4d16-9456-ddba5431eb40">
+              <img alt="Self-comparison heatmap" src="https://github.com/user-attachments/assets/9584281d-033b-4d16-9456-ddba5431eb40" style="display:block; width:100%;" />
+          </picture>
       </td>
     </tr>
     <tr>
