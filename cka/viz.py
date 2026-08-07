@@ -136,6 +136,23 @@ def _generate_tab10_colors(
     return colors
 
 
+def _apply_text_color(fig: Figure, color: str | None) -> None:
+    """Recolor titles, labels, ticks, spines, and legends (not cell annotations)."""
+    if color is None:
+        return
+    for ax in fig.axes:
+        ax.title.set_color(color)
+        ax.xaxis.label.set_color(color)
+        ax.yaxis.label.set_color(color)
+        ax.tick_params(colors=color)
+        for spine in ax.spines.values():
+            spine.set_color(color)
+        legend = ax.get_legend()
+        if legend is not None:
+            for text in legend.get_texts():
+                text.set_color(color)
+
+
 def plot_cka_heatmap(
     cka_matrix: torch.Tensor | np.ndarray,
     layers1: List[str] | None = None,
@@ -156,6 +173,7 @@ def plot_cka_heatmap(
     title_fontsize: int = 14,
     annot_fontsize: int = 6,
     layer_name_depth: int | None = None,
+    text_color: str | None = None,
     show: bool = False,
 ) -> Tuple[Figure, Axes]:
     """Plot CKA similarity matrix as a heatmap.
@@ -181,6 +199,7 @@ def plot_cka_heatmap(
         annot_fontsize: Font size for cell annotations.
         layer_name_depth: Number of name parts to show from end.
             E.g., 2 for "module.layer" from "encoder.module.layer".
+        text_color: Color for titles/labels/ticks (e.g. ``"white"`` on dark pages).
         show: Whether to call plt.show().
 
     Returns:
@@ -217,14 +236,14 @@ def plot_cka_heatmap(
             for j in range(n_layers2):
                 val = matrix[i, j]
                 if not np.ma.is_masked(val) and not np.isnan(val):
-                    text_color = "white" if val < (vmin + vmax) / 2 else "black"
+                    annot_color = "white" if val < (vmin + vmax) / 2 else "black"
                     ax.text(
                         j,
                         i,
                         format(val, annot_fmt),
                         ha="center",
                         va="center",
-                        color=text_color,
+                        color=annot_color,
                         fontsize=annot_fontsize,
                     )
 
@@ -263,6 +282,7 @@ def plot_cka_heatmap(
     # Invert y-axis so layer 0 is at top
     ax.invert_yaxis()
 
+    _apply_text_color(fig, text_color)
     fig.tight_layout()
 
     if show:
@@ -279,6 +299,7 @@ def plot_cka_comparison(
     figsize: Tuple[float, float] | None = None,
     share_colorbar: bool = True,
     cmap: str = "magma",
+    text_color: str | None = None,
     show: bool = False,
     **heatmap_kwargs,
 ) -> Tuple[Figure, np.ndarray]:
@@ -292,6 +313,7 @@ def plot_cka_comparison(
         figsize: Figure size. If None, auto-calculated.
         share_colorbar: Use shared colorbar with same scale.
         cmap: Colormap name.
+        text_color: Color for titles/labels/ticks (e.g. ``"white"`` on dark pages).
         show: Whether to call plt.show().
         **heatmap_kwargs: Additional arguments for plot_cka_heatmap.
 
@@ -303,6 +325,8 @@ def plot_cka_comparison(
 
     if figsize is None:
         figsize = (5 * ncols, 4 * nrows)
+
+    heatmap_kwargs.pop("text_color", None)
 
     fig, axes = plt.subplots(
         nrows, ncols, figsize=figsize, constrained_layout=share_colorbar
@@ -352,6 +376,8 @@ def plot_cka_comparison(
     else:
         fig.tight_layout()
 
+    _apply_text_color(fig, text_color)
+
     if show:
         plt.show()
 
@@ -378,6 +404,7 @@ def plot_cka_trend(
     range_values: torch.Tensor | np.ndarray | Sequence | Tuple | None = None,
     range_alpha: float = 0.2,
     color_overflow: Literal["tab20", "variant", "repeat"] = "tab20",
+    text_color: str | None = None,
 ) -> Tuple[Figure, Axes]:
     """Plot CKA trend lines over epochs, steps, or layers.
 
@@ -402,6 +429,7 @@ def plot_cka_trend(
         range_values: Standard deviation values for shading, or (lower, upper) tuple.
         range_alpha: Alpha for shaded range.
         color_overflow: Strategy for >10 lines: "variant", "repeat", or "tab20".
+        text_color: Color for titles/labels/ticks (e.g. ``"white"`` on dark pages).
 
     Returns:
         Tuple of (Figure, Axes).
@@ -487,6 +515,7 @@ def plot_cka_trend(
         else:
             ax.legend()
 
+    _apply_text_color(fig, text_color)
     fig.tight_layout()
 
     if show:
@@ -513,12 +542,14 @@ def plot_cka_trend_with_range(
     ylim: Tuple[float, float] | None = (0.0, 1.05),
     range_alpha: float = 0.2,
     color_overflow: Literal["variant", "repeat", "tab20"] = "variant",
+    text_color: str | None = None,
 ) -> Tuple[Figure, Axes]:
     """Plot mean ± std trends from repeated CKA measurements.
 
     Args:
         values: 2D array (n_runs, n_points) for a single line, 3D array
             (n_lines, n_runs, n_points), or a list of 2D arrays.
+        text_color: Color for titles/labels/ticks (e.g. ``"white"`` on dark pages).
     """
     if isinstance(values, (torch.Tensor, np.ndarray)):
         array = _to_numpy(values)
@@ -563,6 +594,7 @@ def plot_cka_trend_with_range(
         range_values=stds,
         range_alpha=range_alpha,
         color_overflow=color_overflow,
+        text_color=text_color,
     )
 
 
@@ -584,6 +616,7 @@ def plot_cka_layer_trend(
     show: bool = False,
     ylim: Tuple[float, float] | None = (0.0, 1.05),
     color_overflow: Literal["tab20", "variant", "repeat"] = "tab20",
+    text_color: str | None = None,
 ) -> Tuple[Figure, Axes]:
     """Plot diagonal CKA values across layers for one or more matrices."""
     if isinstance(cka_matrices, (torch.Tensor, np.ndarray)):
@@ -616,7 +649,7 @@ def plot_cka_layer_trend(
         ax=ax,
         legend=legend,
         grid=grid,
-        show=show,
+        show=False,
         ylim=ylim,
         color_overflow=color_overflow,
     )
@@ -634,6 +667,10 @@ def plot_cka_layer_trend(
         ax.set_xticklabels(shortened, rotation=45, ha="right")
     else:
         ax.set_xticks(tick_indices)
+
+    _apply_text_color(fig, text_color)
+    if show:
+        plt.show()
 
     return fig, ax
 
@@ -654,6 +691,15 @@ def save_figure(
         bbox_inches: Bounding box setting.
         transparent: Whether background should be transparent.
             Use PNG (or another alpha-capable format) when True.
+            When True, legend face fill is cleared (edge kept) so the plate
+            does not sit on dark pages. When False, legends keep their default
+            opaque face so they can cover overlapping lines.
     """
+    if transparent:
+        for ax in fig.axes:
+            legend = ax.get_legend()
+            if legend is not None:
+                legend.get_frame().set_facecolor("none")
+
     fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches, transparent=transparent)
     plt.close(fig)  # Close to free memory

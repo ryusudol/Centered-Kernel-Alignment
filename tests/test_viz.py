@@ -591,3 +591,63 @@ class TestSaveFigure:
             save_figure(fig, path)
 
             assert os.path.exists(path)
+
+
+class TestTextColor:
+    def test_heatmap_and_colorbar(self):
+        fig, ax = plot_cka_heatmap(torch.rand(4, 4), text_color="white", title="H")
+        assert ax.title.get_color() == "white"
+        assert ax.xaxis.label.get_color() == "white"
+        cax = next(a for a in fig.axes if a is not ax)
+        assert cax.yaxis.label.get_color() == "white"
+        plt.close(fig)
+
+    def test_trend_legend_and_layer_ticks(self):
+        fig, ax = plot_cka_trend(
+            torch.rand(2, 5),
+            labels=["a", "b"],
+            legend=True,
+            title="T",
+            text_color="white",
+        )
+        assert ax.title.get_color() == "white"
+        assert ax.xaxis.label.get_color() == "white"
+        for text in ax.get_legend().get_texts():
+            assert text.get_color() == "white"
+        assert ax.get_legend().get_frame().get_facecolor()[3] > 0.0
+        plt.close(fig)
+
+        fig, ax = plot_cka_layer_trend(
+            torch.eye(3), layers=["l1", "l2", "l3"], text_color="white"
+        )
+        for label in ax.get_xticklabels():
+            assert label.get_color() == "white"
+        plt.close(fig)
+
+    def test_legend_frame_follows_transparent_save(self):
+        values = torch.rand(2, 5)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fig, ax = plot_cka_trend(values, labels=["a", "b"], legend=True)
+            seen = {}
+            real_savefig = fig.savefig
+
+            def spy(*args, **kwargs):
+                seen["alpha"] = ax.get_legend().get_frame().get_facecolor()[3]
+                return real_savefig(*args, **kwargs)
+
+            fig.savefig = spy
+            save_figure(fig, os.path.join(tmpdir, "t.png"), transparent=True)
+            assert seen["alpha"] == 0.0
+
+            fig, ax = plot_cka_trend(values, labels=["a", "b"], legend=True)
+            seen = {}
+            real_savefig = fig.savefig
+
+            def spy_opaque(*args, **kwargs):
+                seen["alpha"] = ax.get_legend().get_frame().get_facecolor()[3]
+                return real_savefig(*args, **kwargs)
+
+            fig.savefig = spy_opaque
+            save_figure(fig, os.path.join(tmpdir, "o.png"), transparent=False)
+            assert seen["alpha"] > 0.0
