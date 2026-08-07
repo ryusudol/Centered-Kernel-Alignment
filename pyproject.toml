@@ -1,6 +1,6 @@
 [project]
 name = "pytorch_cka"
-version = "1.1.0"
+version = "1.1.1"
 description = "Centered Kernel Alignment (CKA) with Efficient Computation and Layer-wise Visualization for PyTorch "
 readme = "README.md"
 requires-python = ">=3.10"
