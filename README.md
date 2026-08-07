@@ -12,9 +12,9 @@
 
 <p align="center">
     <picture align="center">
-        <source media="(prefers-color-scheme: light)" srcset="docs/figures/bench_black.png">
-        <source media="(prefers-color-scheme: dark)" srcset="docs/figures/bench_light.png">
-        <img alt="A bar chart with benchmark results" src="docs/figures/bench_light.png" width="100%" />
+        <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/d915e2c9-4d76-4a57-95f2-7b94955d9ffd">
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/69afbbdf-a86e-43b6-afd4-a0b8e39037f3">
+        <img alt="A bar chart with benchmark results" src="https://github.com/user-attachments/assets/69afbbdf-a86e-43b6-afd4-a0b8e39037f3" width="100%" />
     </picture>
 </p>
 
@@ -119,16 +119,16 @@ fig, ax = plot_cka_heatmap(
     <tr>
       <td width="63.5%" style="padding:0; vertical-align:top; line-height:0;">
           <picture>
-              <source media="(prefers-color-scheme: light)" srcset="docs/figures/identical_resnet18_black.png">
-              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/identical_resnet18_white.png">
-              <img alt="Self-comparison heatmap" src="docs/figures/identical_resnet18_white.png" style="display:block; width:100%;" />
+              <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/987edc7d-cdaf-43a2-bc97-36ca058a0c26">
+              <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/173a6fcd-b271-4ad9-aadf-933809a63bd9">
+              <img alt="Self-comparison heatmap" src="https://github.com/user-attachments/assets/173a6fcd-b271-4ad9-aadf-933809a63bd9" style="display:block; width:100%;" />
           </picture>
       </td>
       <td width="36.5%" style="padding:0; vertical-align:top; line-height:0;">
           <picture>
-              <source media="(prefers-color-scheme: light)" srcset="docs/figures/resnet34_vs_18_black.png">
-              <source media="(prefers-color-scheme: dark)" srcset="docs/figures/resnet34_vs_18_white.png">
-              <img alt="Cross-model comparison heatmap" src="docs/figures/resnet34_vs_18_white.png" style="display:block; width:100%;" />
+              <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/e15a2f7c-7f3d-4233-872b-f72ddca5078e">
+              <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/1263198f-da4f-469b-aa50-a64befb670b6">
+              <img alt="Cross-model comparison heatmap" src="https://github.com/user-attachments/assets/1263198f-da4f-469b-aa50-a64befb670b6" style="display:block; width:100%;" />
           </picture>
       </td>
     </tr>
@@ -171,16 +171,16 @@ fig, ax = plot_cka_layer_trend(
     <tr>
       <td>
         <picture>
-          <source media="(prefers-color-scheme: light)" srcset="docs/figures/epoch_trends_black.png">
-          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/epoch_trends_white.png">
-          <img src="docs/figures/epoch_trends_white.png" alt="CKA Score Trend Across Epochs" width="100%"/>
+          <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/f89c22a0-a823-4da8-82c4-0bd91985c0f7">
+          <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/33df35b3-49b6-47a7-986e-9252f3bb61bc">
+          <img src="https://github.com/user-attachments/assets/33df35b3-49b6-47a7-986e-9252f3bb61bc" alt="CKA Score Trend Across Epochs" width="100%"/>
         </picture>
       </td>
       <td>
         <picture>
-          <source media="(prefers-color-scheme: light)" srcset="docs/figures/layer_trends_black.png">
-          <source media="(prefers-color-scheme: dark)" srcset="docs/figures/layer_trends_white.png">
-          <img src="docs/figures/layer_trends_white.png" alt="CKA Score Trend Across Layers" width="100%"/>
+          <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/c8729b04-8a34-40c6-a5a6-e39322960468">
+          <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/a57b5820-57d9-4f64-9df6-d8eaf1720bde">
+          <img src="https://github.com/user-attachments/assets/a57b5820-57d9-4f64-9df6-d8eaf1720bde" alt="CKA Score Trend Across Layers" width="100%"/>
         </picture>
       </td>
     </tr>
