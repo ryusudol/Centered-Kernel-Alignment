@@ -22,7 +22,7 @@ References:
     - Nguyen et al., 2020: "Do Wide and Deep Networks Learn the Same Things?"
 """
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 from .cka import CKA, cka_from_features, compute_cka
 from .hsic import hsic, hsic_cross
