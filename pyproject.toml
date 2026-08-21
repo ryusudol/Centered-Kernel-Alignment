@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
-  {name = "Suhyeon (Sean) Yu", email = "suhyeon.yu.2789@gmail.com"}
+  {name = "Suhyeon Yu", email = "suhyeon.yu.2789@gmail.com"}
 ]
 keywords = ["pytorch", "cka", "centered kernel alignment", "neural networks", "machine learning", "representation", "similarity"]
 classifiers = [
@@ -43,7 +43,14 @@ packages = ["cka"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=cka --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["cka"]
+branch = false
+
+[tool.coverage.report]
+show_missing = true
 
 [dependency-groups]
 dev = [

@@ -95,12 +95,7 @@ class CKA:
         if device:
             self.device = torch.device(device)
         else:
-            if torch.cuda.is_available():
-                device = "cuda"
-            elif torch.backends.mps.is_available():
-                device = "mps"
-            else:
-                device = "cpu"
+            device = "cuda" if torch.cuda.is_available() else "cpu"
             self.device = torch.device(device)
 
         self.model1 = self.model1.to(self.device)
@@ -268,24 +263,7 @@ class CKA:
                         "Increase batch size to at least 4."
                     )
                 x = x.to(self.device)
-
-                if self._is_same_model:
-                    self.model1(x)
-                else:
-                    if self.device.type == "cuda":
-                        stream1 = torch.cuda.Stream(device=self.device)
-                        stream2 = torch.cuda.Stream(device=self.device)
-
-                        with torch.cuda.stream(stream1):
-                            self.model1(x)
-                        with torch.cuda.stream(stream2):
-                            self.model2(x)
-
-                        stream1.synchronize()
-                        stream2.synchronize()
-                    else:
-                        self.model1(x)
-                        self.model2(x)
+                self._forward_models(x)
 
                 self._accumulate_hsic(hsic_xy, hsic_xx, hsic_yy)
 
@@ -296,6 +274,23 @@ class CKA:
                     )
 
         return self._compute_cka_matrix(hsic_xy, hsic_xx, hsic_yy)
+
+    def _forward_models(self, x: torch.Tensor) -> None:
+        if self._is_same_model:
+            self.model1(x)
+            return
+        if self.device.type == "cuda":
+            stream1 = torch.cuda.Stream(device=self.device)
+            stream2 = torch.cuda.Stream(device=self.device)
+            with torch.cuda.stream(stream1):
+                self.model1(x)
+            with torch.cuda.stream(stream2):
+                self.model2(x)
+            stream1.synchronize()
+            stream2.synchronize()
+            return
+        self.model1(x)
+        self.model2(x)
 
     def __enter__(self) -> "CKA":
         if self._hook_handles:

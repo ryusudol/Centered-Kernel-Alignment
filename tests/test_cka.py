@@ -79,6 +79,32 @@ class TestComputeCkaFunction:
         with pytest.raises(ValueError, match="at least one dataloader"):
             compute_cka(model1, model2)
 
+    def test_nested_list_of_dataloaders(self, model1, model2, dataloader):
+        x2 = torch.randn(32, 10)
+        dataloader2 = DataLoader(TensorDataset(x2), batch_size=8)
+
+        results = compute_cka(
+            model1, model2, [dataloader, dataloader2], progress=False
+        )
+
+        assert isinstance(results, list)
+        assert len(results) == 2
+        assert results[0].shape == (3, 2)
+        assert results[1].shape == (3, 2)
+
+    def test_nested_tuple_of_dataloaders(self, model1, model2, dataloader):
+        x2 = torch.randn(32, 10)
+        dataloader2 = DataLoader(TensorDataset(x2), batch_size=8)
+
+        results = compute_cka(
+            model1, model2, (dataloader, dataloader2), progress=False
+        )
+
+        assert isinstance(results, list)
+        assert len(results) == 2
+        assert results[0].shape == (3, 2)
+        assert results[1].shape == (3, 2)
+
 
 class TestLayerSpecification:
     def test_string_layer_names(self, model1, model2, dataloader):

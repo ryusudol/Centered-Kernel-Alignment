@@ -354,6 +354,178 @@ class TestPlotCkaTrend:
         assert fig is not None
         plt.close(fig)
 
+    def test_3d_values_raise(self):
+        with pytest.raises(ValueError, match="values must be 1D or 2D"):
+            plot_cka_trend(torch.rand(2, 3, 4))
+
+    def test_empty_list_raises(self):
+        with pytest.raises(ValueError, match="at least one series"):
+            plot_cka_trend([])
+
+    def test_list_of_scalars(self):
+        fig, ax = plot_cka_trend([0.1, 0.2, 0.3, 0.4])
+
+        assert len(ax.get_lines()) == 1
+        plt.close(fig)
+
+    def test_list_of_2d_arrays_raises(self):
+        with pytest.raises(ValueError, match="Each series must be 1D"):
+            plot_cka_trend([np.random.rand(2, 5), np.random.rand(2, 5)])
+
+    def test_unsupported_values_type_raises(self):
+        with pytest.raises(TypeError, match="Unsupported values type"):
+            plot_cka_trend({"a": 1})
+
+    def test_unequal_series_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            plot_cka_trend([torch.rand(5), torch.rand(6)])
+
+    def test_2d_numpy_x_values(self):
+        values = torch.rand(2, 5)
+        x_values = np.stack([np.arange(5), np.arange(5) + 10])
+
+        fig, ax = plot_cka_trend(values, x_values=x_values)
+
+        assert list(ax.get_lines()[1].get_xdata()) == list(x_values[1])
+        plt.close(fig)
+
+    def test_2d_numpy_x_values_wrong_shape_raises(self):
+        with pytest.raises(ValueError, match="x_values shape must match"):
+            plot_cka_trend(torch.rand(2, 5), x_values=np.zeros((3, 5)))
+
+    def test_nested_list_x_values(self):
+        values = torch.rand(2, 5)
+        x_values = [np.arange(5), np.arange(5) + 1]
+
+        fig, ax = plot_cka_trend(values, x_values=x_values)
+
+        assert list(ax.get_lines()[0].get_xdata()) == list(x_values[0])
+        plt.close(fig)
+
+    def test_nested_x_values_wrong_line_count_raises(self):
+        with pytest.raises(ValueError, match="x_values must match number of lines"):
+            plot_cka_trend(torch.rand(2, 5), x_values=[np.arange(5)])
+
+    def test_nested_x_values_wrong_length_raises(self):
+        with pytest.raises(ValueError, match="1D and match length"):
+            plot_cka_trend(torch.rand(2, 5), x_values=[np.arange(5), np.arange(4)])
+
+    def test_nested_x_values_not_1d_raises(self):
+        with pytest.raises(ValueError, match="1D and match length"):
+            plot_cka_trend(
+                torch.rand(2, 5),
+                x_values=[np.ones((2, 5)), np.ones((2, 5))],
+            )
+
+    def test_1d_x_values_wrong_length_raises(self):
+        with pytest.raises(ValueError, match="1D and match series length"):
+            plot_cka_trend(torch.rand(5), x_values=[0, 1, 2])
+
+    def test_single_color_list_broadcast(self):
+        values = torch.rand(3, 5)
+
+        fig, ax = plot_cka_trend(values, colors=["red"])
+
+        assert fig is not None
+        plt.close(fig)
+
+    def test_scalar_color_broadcast(self):
+        values = torch.rand(3, 5)
+
+        fig, ax = plot_cka_trend(values, colors="red")
+
+        assert fig is not None
+        plt.close(fig)
+
+    def test_colors_length_mismatch_raises(self):
+        with pytest.raises(ValueError, match="colors length must match"):
+            plot_cka_trend(torch.rand(3, 5), colors=["red", "blue"])
+
+    def test_color_overflow_repeat(self):
+        fig, ax = plot_cka_trend(torch.rand(12, 4), color_overflow="repeat")
+
+        assert len(ax.get_lines()) == 12
+        plt.close(fig)
+
+    def test_color_overflow_tab20(self):
+        fig, ax = plot_cka_trend(torch.rand(12, 4), color_overflow="tab20")
+
+        assert len(ax.get_lines()) == 12
+        plt.close(fig)
+
+    def test_color_overflow_tab20_wrap(self):
+        fig, ax = plot_cka_trend(torch.rand(21, 4), color_overflow="tab20")
+
+        assert len(ax.get_lines()) == 21
+        plt.close(fig)
+
+    def test_color_overflow_variant(self):
+        fig, ax = plot_cka_trend(torch.rand(12, 4), color_overflow="variant")
+
+        assert len(ax.get_lines()) == 12
+        plt.close(fig)
+
+    def test_show_range_without_values_raises(self):
+        with pytest.raises(ValueError, match="show_range=True requires range_values"):
+            plot_cka_trend(torch.rand(5), show_range=True)
+
+    def test_show_range_lower_upper_tuple(self):
+        values = torch.rand(5)
+        lower = values - 0.1
+        upper = values + 0.1
+
+        fig, ax = plot_cka_trend(
+            values, show_range=True, range_values=(lower, upper)
+        )
+
+        assert len(ax.collections) > 0
+        plt.close(fig)
+
+    def test_show_range_tuple_broadcast(self):
+        values = torch.rand(3, 5)
+        lower = torch.zeros(5)
+        upper = torch.ones(5)
+
+        fig, ax = plot_cka_trend(
+            values, show_range=True, range_values=(lower, upper)
+        )
+
+        assert len(ax.collections) == 3
+        plt.close(fig)
+
+    def test_show_range_std_broadcast(self):
+        values = torch.rand(3, 5)
+        std = torch.full((5,), 0.05)
+
+        fig, ax = plot_cka_trend(values, show_range=True, range_values=std)
+
+        assert len(ax.collections) == 3
+        plt.close(fig)
+
+    def test_show_range_std_line_count_mismatch_raises(self):
+        with pytest.raises(ValueError, match="range_values must match number of lines"):
+            plot_cka_trend(
+                torch.rand(2, 5),
+                show_range=True,
+                range_values=torch.rand(3, 5),
+            )
+
+    def test_show_range_tuple_line_count_mismatch_raises(self):
+        with pytest.raises(ValueError, match="range_values must match number of lines"):
+            plot_cka_trend(
+                torch.rand(3, 5),
+                show_range=True,
+                range_values=(torch.rand(2, 5), torch.rand(2, 5)),
+            )
+
+    def test_show_range_length_mismatch_raises(self):
+        with pytest.raises(ValueError, match="range_values length must match"):
+            plot_cka_trend(
+                torch.rand(5),
+                show_range=True,
+                range_values=(torch.rand(4), torch.rand(4)),
+            )
+
 
 class TestPlotCkaTrendWithRange:
     def test_single_group_2d(self):
@@ -376,6 +548,30 @@ class TestPlotCkaTrendWithRange:
         assert len(ax.collections) >= 3
         plt.close(fig)
 
+    def test_list_of_2d_groups(self):
+        values = [torch.rand(4, 10), torch.rand(4, 10)]
+
+        fig, ax = plot_cka_trend_with_range(values)
+
+        assert len(ax.get_lines()) == 2
+        plt.close(fig)
+
+    def test_1d_values_raise(self):
+        with pytest.raises(ValueError, match="values must be 2D or 3D"):
+            plot_cka_trend_with_range(torch.rand(10))
+
+    def test_empty_list_raises(self):
+        with pytest.raises(ValueError, match="at least one group"):
+            plot_cka_trend_with_range([])
+
+    def test_list_of_1d_groups_raises(self):
+        with pytest.raises(ValueError, match="Each group must be 2D"):
+            plot_cka_trend_with_range([torch.rand(10), torch.rand(10)])
+
+    def test_unsupported_type_raises(self):
+        with pytest.raises(TypeError, match="Unsupported values type"):
+            plot_cka_trend_with_range({"a": 1})
+
 
 class TestPlotCkaLayerTrend:
     def test_single_matrix(self):
@@ -387,6 +583,52 @@ class TestPlotCkaLayerTrend:
         assert fig is not None
         xticklabels = [t.get_text() for t in ax.get_xticklabels()]
         assert xticklabels == layers
+        plt.close(fig)
+
+    def test_list_of_matrices(self):
+        matrices = [torch.rand(4, 4), torch.rand(4, 4)]
+
+        fig, ax = plot_cka_layer_trend(matrices, legend=True)
+
+        assert len(ax.get_lines()) == 2
+        plt.close(fig)
+
+    def test_empty_list_raises(self):
+        with pytest.raises(ValueError, match="at least one matrix"):
+            plot_cka_layer_trend([])
+
+    def test_unsupported_type_raises(self):
+        with pytest.raises(TypeError, match="Unsupported cka_matrices type"):
+            plot_cka_layer_trend({"a": 1})
+
+    def test_layers_length_mismatch_raises(self):
+        with pytest.raises(ValueError, match="layers length must match"):
+            plot_cka_layer_trend(torch.rand(4, 4), layers=["a", "b"])
+
+    def test_layer_name_depth(self):
+        matrix = torch.rand(2, 2)
+        layers = ["block.conv.weight", "block.relu.weight"]
+
+        fig, ax = plot_cka_layer_trend(
+            matrix, layers=layers, layer_name_depth=1
+        )
+
+        xticklabels = [t.get_text() for t in ax.get_xticklabels()]
+        assert xticklabels == ["weight", "weight"]
+        plt.close(fig)
+
+    def test_numeric_ticks_without_layers(self):
+        fig, ax = plot_cka_layer_trend(torch.rand(3, 3))
+
+        ticks = list(ax.get_xticks())
+        assert ticks == [0, 1, 2]
+        plt.close(fig)
+
+    def test_show_true(self):
+        with unittest.mock.patch.object(plt, "show") as mock_show:
+            fig, ax = plot_cka_layer_trend(torch.rand(3, 3), show=True)
+
+        mock_show.assert_called_once()
         plt.close(fig)
 
 class TestPlotCkaComparison:

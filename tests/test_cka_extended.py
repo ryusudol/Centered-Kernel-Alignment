@@ -166,17 +166,51 @@ class TestInit:
         assert cka.model1 is model
 
     @patch("torch.cuda.is_available", return_value=False)
-    @patch("torch.backends.mps.is_available", return_value=False)
-    def test_auto_device_cpu_fallback(self, mock_mps, mock_cuda, model1, model2):
+    def test_auto_device_cpu_fallback(self, mock_cuda, model1, model2):
         cka = CKA(model1, model2)
 
         assert cka.device == torch.device("cpu")
+
+    @patch("torch.cuda.is_available", return_value=True)
+    def test_auto_device_cuda_without_gpu(self, mock_cuda, model1, model2):
+        with patch.object(nn.Module, "to", lambda self, *args, **kwargs: self):
+            cka = CKA(model1, model2)
+
+        assert cka.device == torch.device("cuda")
 
     @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
     def test_auto_device_cuda(self, model1, model2):
         cka = CKA(model1, model2)
 
         assert cka.device == torch.device("cuda")
+
+    @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
+    def test_two_model_cuda_streams(self, model1, model2, dataloader):
+        result = compute_cka(
+            model1, model2, dataloader, device="cuda", progress=False
+        )[0]
+
+        assert result.shape == (3, 3)
+        assert torch.all((result >= 0) & (result <= 1))
+
+    def test_two_model_cuda_streams_mocked(self, model1, model2):
+        cka = CKA(model1, model2, device="cpu")
+        cka.device = type("CudaDevice", (), {"type": "cuda"})()
+
+        stream = MagicMock()
+        stream_cm = MagicMock()
+        stream_cm.__enter__ = MagicMock(return_value=None)
+        stream_cm.__exit__ = MagicMock(return_value=False)
+
+        x = torch.randn(8, 10)
+        with (
+            patch("torch.cuda.Stream", return_value=stream) as mock_stream,
+            patch("torch.cuda.stream", return_value=stream_cm),
+        ):
+            cka._forward_models(x)
+
+        assert mock_stream.call_count == 2
+        assert stream.synchronize.call_count == 2
 
     def test_same_model_detection(self, model1):
         cka = CKA(model1, model1)
