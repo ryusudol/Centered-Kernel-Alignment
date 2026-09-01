@@ -193,3 +193,16 @@ fig, ax = plot_cka_layer_trend(
 ## 📚 References
 
 Kornblith, Simon, et al. ["Similarity of Neural Network Representations Revisited."](https://arxiv.org/abs/1905.00414) _ICML 2019._
+
+## 📎 Citation
+
+If you use **pytorch-cka** in a paper or project, please cite the software:
+
+```bibtex
+@software{yu2026pytorchcka,
+  author  = {Suhyeon Yu},
+  title   = {pytorch-cka},
+  url     = {https://github.com/ryusudol/Centered-Kernel-Alignment},
+  version = {1.1.3},
+  year    = {2026}
+}
