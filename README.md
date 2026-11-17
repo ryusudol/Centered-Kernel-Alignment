@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <i><b>30x</b> faster CKA computation across 18 representational layers of ResNet-18 models on CIFAR-10 using an NVIDIA RTX PRO 6000 Blackwell GPU</i>
+  <i><b>31×</b> faster than a NumPy CPU baseline and <b>7×</b> faster than torch-cka on the same GPU: CKA across 18 ResNet-18 layers on the CIFAR-10 test set (10k images), NVIDIA RTX PRO 6000 Blackwell</i>
 </p>
 
 - ⚡️ Fastest among CKA libraries thanks to **vectorized ops** & **GPU acceleration**
@@ -48,12 +48,15 @@ from cka import compute_cka
 from torch.utils.data import DataLoader
 from torchvision.models import resnet18, resnet34
 
-resnet_18 = resnet18(pretrained=True)
-resnet_34 = resnet34(pretrained=True)
+device = "cuda"  # or "cpu"
+batch_size = 256  # must be > 3
 
-dataloader1 = Dataloader(your_dataset1, batch_size=bach_size, shuffle=False, num_workers=4)
-dataloader2 = Dataloader(your_dataset2, batch_size=bach_size, shuffle=False, num_workers=4)
-dataloader3 = Dataloader(your_dataset3, batch_size=bach_size, shuffle=False, num_workers=4)
+resnet_18 = resnet18(weights="IMAGENET1K_V1")
+resnet_34 = resnet34(weights="IMAGENET1K_V1")
+
+dataloader1 = DataLoader(your_dataset1, batch_size=batch_size, shuffle=False, num_workers=4)
+dataloader2 = DataLoader(your_dataset2, batch_size=batch_size, shuffle=False, num_workers=4)
+dataloader3 = DataLoader(your_dataset3, batch_size=batch_size, shuffle=False, num_workers=4)
 dataloaders = [dataloader1, dataloader2, dataloader3]
 
 layers = [
@@ -141,7 +144,7 @@ fig, ax = plot_cka_heatmap(
 **Trend Plot**
 
 ```python
-from cka import plot_cka_trend
+from cka import plot_cka_layer_trend, plot_cka_trend
 
 # Plot diagonal (self-similarity across layers)
 diagonal = torch.diag(matrix)
